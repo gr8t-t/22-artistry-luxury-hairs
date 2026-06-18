@@ -28,17 +28,29 @@ export default function Navbar() {
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'nav-blur bg-brand-black/80 shadow-lg shadow-black/30 py-3' : 'bg-transparent py-5'
+        scrolled ? 'nav-blur bg-brand-black/90 shadow-lg shadow-black/40 py-2' : 'bg-transparent py-4'
       }`}>
         <div className="max-w-6xl mx-auto px-4 md:px-8 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-full bg-pink-gradient flex items-center justify-center text-white font-playfair font-bold text-lg shadow-lg group-hover:scale-110 transition-transform">
-              22
-            </div>
-            <div className="hidden sm:block">
-              <p className="font-playfair font-bold text-white text-sm leading-tight">22 Artistry</p>
-              <p className="text-brand-pink text-xs font-poppins tracking-widest">LUXURY HAIRS</p>
+          <Link to="/" className="flex items-center group">
+            <img
+              src="/logo.png"
+              alt="22 Artistry Luxury Hairs"
+              className="h-12 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              onError={e => {
+                e.target.style.display = 'none'
+                e.target.nextSibling.style.display = 'flex'
+              }}
+            />
+            {/* Fallback if logo.png not yet added */}
+            <div style={{ display: 'none' }} className="items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-pink-gradient flex items-center justify-center text-white font-playfair font-bold text-lg shadow-lg">
+                22
+              </div>
+              <div className="hidden sm:block">
+                <p className="font-playfair font-bold text-white text-sm leading-tight">22 Artistry</p>
+                <p className="text-brand-pink text-xs font-poppins tracking-widest">LUXURY HAIRS</p>
+              </div>
             </div>
           </Link>
 

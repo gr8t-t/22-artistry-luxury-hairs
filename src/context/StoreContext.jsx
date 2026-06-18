@@ -15,7 +15,7 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: '2',
-    name: 'Frontal Lace 13×4',
+    name: 'Frontal Lace 13x4',
     category: 'Hair',
     price: 18000,
     quantity: 8,
@@ -39,7 +39,7 @@ const DEFAULT_PRODUCTS = [
     category: 'Beauty',
     price: 4500,
     quantity: 15,
-    description: 'Ultra-natural mink lashes. Full volume, lightweight. Reusable up to 25×.',
+    description: 'Ultra-natural mink lashes. Full volume, lightweight. Reusable up to 25 times.',
     image: 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=600&q=80',
     featured: true,
   },
@@ -56,75 +56,63 @@ const DEFAULT_GALLERY = [
 
 export function StoreProvider({ children }) {
   const [products, setProducts] = useState(() => {
-    try {
-      const saved = localStorage.getItem('artistry_products')
-      return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS
-    } catch { return DEFAULT_PRODUCTS }
+    try { const s = localStorage.getItem('artistry_products'); return s ? JSON.parse(s) : DEFAULT_PRODUCTS }
+    catch { return DEFAULT_PRODUCTS }
   })
 
   const [gallery, setGallery] = useState(() => {
-    try {
-      const saved = localStorage.getItem('artistry_gallery')
-      return saved ? JSON.parse(saved) : DEFAULT_GALLERY
-    } catch { return DEFAULT_GALLERY }
+    try { const s = localStorage.getItem('artistry_gallery'); return s ? JSON.parse(s) : DEFAULT_GALLERY }
+    catch { return DEFAULT_GALLERY }
   })
 
   const [bookings, setBookings] = useState(() => {
-    try {
-      const saved = localStorage.getItem('artistry_bookings')
-      return saved ? JSON.parse(saved) : []
-    } catch { return [] }
+    try { const s = localStorage.getItem('artistry_bookings'); return s ? JSON.parse(s) : [] }
+    catch { return [] }
+  })
+
+  const [reviews, setReviews] = useState(() => {
+    try { const s = localStorage.getItem('artistry_reviews'); return s ? JSON.parse(s) : [] }
+    catch { return [] }
   })
 
   const [cart, setCart] = useState([])
   const [cartOpen, setCartOpen] = useState(false)
 
-  useEffect(() => {
-    localStorage.setItem('artistry_products', JSON.stringify(products))
-  }, [products])
-
-  useEffect(() => {
-    localStorage.setItem('artistry_gallery', JSON.stringify(gallery))
-  }, [gallery])
-
-  useEffect(() => {
-    localStorage.setItem('artistry_bookings', JSON.stringify(bookings))
-  }, [bookings])
+  useEffect(() => { localStorage.setItem('artistry_products', JSON.stringify(products)) }, [products])
+  useEffect(() => { localStorage.setItem('artistry_gallery', JSON.stringify(gallery)) }, [gallery])
+  useEffect(() => { localStorage.setItem('artistry_bookings', JSON.stringify(bookings)) }, [bookings])
+  useEffect(() => { localStorage.setItem('artistry_reviews', JSON.stringify(reviews)) }, [reviews])
 
   // Products CRUD
-  const addProduct = (product) => {
-    const newProduct = { ...product, id: Date.now().toString() }
-    setProducts(prev => [...prev, newProduct])
-  }
-
-  const updateProduct = (id, updates) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
-  }
-
-  const deleteProduct = (id) => {
-    setProducts(prev => prev.filter(p => p.id !== id))
-  }
+  const addProduct = (product) => setProducts(prev => [...prev, { ...product, id: Date.now().toString() }])
+  const updateProduct = (id, updates) => setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
+  const deleteProduct = (id) => setProducts(prev => prev.filter(p => p.id !== id))
 
   // Gallery CRUD
-  const addGalleryImage = (image) => {
-    const newImage = { ...image, id: Date.now().toString() }
-    setGallery(prev => [...prev, newImage])
-  }
-
-  const deleteGalleryImage = (id) => {
-    setGallery(prev => prev.filter(img => img.id !== id))
-  }
+  const addGalleryImage = (image) => setGallery(prev => [...prev, { ...image, id: Date.now().toString() }])
+  const deleteGalleryImage = (id) => setGallery(prev => prev.filter(img => img.id !== id))
 
   // Bookings
   const addBooking = (booking) => {
-    const newBooking = { ...booking, id: Date.now().toString(), date: new Date().toISOString(), status: 'pending' }
+    const newBooking = { ...booking, id: Date.now().toString(), createdAt: new Date().toISOString(), status: 'pending' }
     setBookings(prev => [...prev, newBooking])
     return newBooking
   }
+  const updateBookingStatus = (id, status) => setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b))
 
-  const updateBookingStatus = (id, status) => {
-    setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b))
+  // Reviews
+  const addReview = (review) => {
+    const newReview = {
+      ...review,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      approved: false,
+    }
+    setReviews(prev => [...prev, newReview])
+    return newReview
   }
+  const approveReview = (id) => setReviews(prev => prev.map(r => r.id === id ? { ...r, approved: true } : r))
+  const deleteReview = (id) => setReviews(prev => prev.filter(r => r.id !== id))
 
   // Cart
   const addToCart = (product) => {
@@ -135,23 +123,18 @@ export function StoreProvider({ children }) {
     })
     setCartOpen(true)
   }
-
   const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id))
-
   const updateCartQty = (id, qty) => {
     if (qty < 1) return removeFromCart(id)
     setCart(prev => prev.map(i => i.id === id ? { ...i, qty } : i))
   }
-
   const clearCart = () => setCart([])
-
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0)
   const cartCount = cart.reduce((sum, i) => sum + i.qty, 0)
 
   const checkoutViaWhatsApp = () => {
-    const lines = cart.map(i => `• ${i.name} x${i.qty} — ₦${(i.price * i.qty).toLocaleString()}`).join('\n')
-    const total = `\n*Total: ₦${cartTotal.toLocaleString()}*`
-    const msg = `Hello 22 Artistry! I'd like to order:\n\n${lines}${total}\n\nPlease confirm availability.`
+    const lines = cart.map(i => `- ${i.name} x${i.qty} (N${(i.price * i.qty).toLocaleString()})`).join('\n')
+    const msg = `Hello 22 Artistry! I would like to order:\n\n${lines}\n\nTotal: N${cartTotal.toLocaleString()}\n\nPlease confirm availability.`
     window.open(`https://wa.me/2349075341220?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -160,6 +143,7 @@ export function StoreProvider({ children }) {
       products, addProduct, updateProduct, deleteProduct,
       gallery, addGalleryImage, deleteGalleryImage,
       bookings, addBooking, updateBookingStatus,
+      reviews, addReview, approveReview, deleteReview,
       cart, cartOpen, setCartOpen, addToCart, removeFromCart,
       updateCartQty, clearCart, cartTotal, cartCount, checkoutViaWhatsApp,
     }}>

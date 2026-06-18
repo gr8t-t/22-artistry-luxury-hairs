@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useStore } from '../context/StoreContext'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
-  Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, ShoppingBag,
+  Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare,
 } from 'lucide-react'
 
 const ADMIN_PASSWORD = 'artistry2024'
-const TABS = ['Products', 'Gallery', 'Bookings']
+const TABS = ['Products', 'Gallery', 'Bookings', 'Reviews']
 const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 
 const BLANK_PRODUCT = { name: '', category: 'Hair', price: '', quantity: '', description: '', image: '', featured: false }
@@ -23,6 +23,7 @@ export default function Admin() {
     products, addProduct, updateProduct, deleteProduct,
     gallery, addGalleryImage, deleteGalleryImage,
     bookings, updateBookingStatus,
+    reviews, approveReview, deleteReview,
   } = useStore()
 
   // Product state
@@ -409,6 +410,73 @@ export default function Admin() {
                         >
                           WhatsApp
                         </a>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── REVIEWS TAB ── */}
+        {tab === 'Reviews' && (
+          <div>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-playfair text-white font-semibold text-xl">
+                Reviews
+                <span className="ml-2 text-sm text-gray-500 font-poppins font-normal">
+                  ({reviews.filter(r => !r.approved).length} pending)
+                </span>
+              </h2>
+            </div>
+            {reviews.length === 0 ? (
+              <div className="text-center py-14">
+                <MessageSquare size={40} className="text-brand-border mx-auto mb-3" />
+                <p className="text-gray-500 font-poppins">No reviews submitted yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {[...reviews].reverse().map(r => (
+                  <div key={r.id} className={`glass-card rounded-xl p-5 border ${r.approved ? 'border-green-500/20' : 'border-brand-pink/10'}`}>
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className={`text-xs font-poppins font-semibold px-2 py-0.5 rounded-full ${
+                            r.approved
+                              ? 'bg-green-500/15 text-green-400'
+                              : 'bg-yellow-500/15 text-yellow-400'
+                          }`}>
+                            {r.approved ? 'Published' : 'Pending Approval'}
+                          </span>
+                        </div>
+                        <p className="text-white font-poppins font-semibold text-sm">{r.name}</p>
+                        {r.service && <p className="text-brand-pink text-xs font-poppins mt-0.5">{r.service}</p>}
+                        <div className="flex gap-0.5 mt-1">
+                          {[1,2,3,4,5].map(s => (
+                            <Star key={s} size={12} className={s <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600'} />
+                          ))}
+                        </div>
+                        <p className="text-gray-400 text-sm font-poppins mt-2 leading-relaxed">"{r.comment}"</p>
+                        <p className="text-gray-600 text-xs font-poppins mt-2">
+                          {new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        {!r.approved && (
+                          <button
+                            onClick={() => approveReview(r.id)}
+                            className="px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-poppins hover:bg-green-500/20 transition-colors"
+                          >
+                            Approve
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteReview(r.id)}
+                          className="w-8 h-8 rounded-lg glass-card flex items-center justify-center text-gray-500 hover:text-red-400 hover:border-red-400/30 transition-all"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
                   </div>
