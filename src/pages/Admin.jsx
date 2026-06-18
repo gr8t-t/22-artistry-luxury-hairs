@@ -12,14 +12,19 @@ const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 const BLANK_PRODUCT = { name: '', category: 'Hair', price: '', quantity: '', description: '', image: '', featured: false }
 const BLANK_IMAGE = { url: '', caption: '' }
 
-/* Converts a File to a base64 data-URL so it can be stored in localStorage */
-function readFileAsDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = e => resolve(e.target.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
+const CLOUDINARY_CLOUD  = 'dlexy6j8w'
+const CLOUDINARY_PRESET = 'artistry_uploads'
+
+async function uploadToCloudinary(file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  fd.append('upload_preset', CLOUDINARY_PRESET)
+  const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+    method: 'POST', body: fd,
   })
+  const data = await res.json()
+  if (!data.secure_url) throw new Error(data.error?.message || 'Upload failed')
+  return data.secure_url
 }
 
 /* Reusable image-upload field: paste URL OR pick from device */
@@ -32,8 +37,10 @@ function ImageField({ label, value, onChange }) {
     if (!file) return
     setUploading(true)
     try {
-      const dataUrl = await readFileAsDataURL(file)
-      onChange(dataUrl)
+      const url = await uploadToCloudinary(file)
+      onChange(url)
+    } catch (err) {
+      alert('Upload failed: ' + err.message)
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -47,9 +54,8 @@ function ImageField({ label, value, onChange }) {
         <input
           className="input-field flex-1"
           placeholder="Paste image URL  —  or use Upload button →"
-          value={value.startsWith('data:') ? '(uploaded from device)' : value}
+          value={value}
           onChange={e => onChange(e.target.value)}
-          readOnly={value.startsWith('data:')}
         />
         <button
           type="button"
