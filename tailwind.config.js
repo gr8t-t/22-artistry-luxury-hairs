@@ -17,7 +17,9 @@ export default {
       },
       fontFamily: {
         cormorant: ['"Cormorant Garant"', 'Georgia', 'serif'],
+        playfair: ['"Cormorant Garant"', 'Georgia', 'serif'],
         sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        poppins: ['"DM Sans"', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         display: '-.03em',
