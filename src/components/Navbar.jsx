@@ -44,7 +44,7 @@ export default function Navbar() {
                 disappear on dark surfaces while keeping the coloured marks.
               */
               <img
-                src="/logo.jpeg"
+                src="/logo.png"
                 alt="22 Artistry Luxury Hairs"
                 className="h-11 md:h-13 w-auto object-contain"
                 style={{ mixBlendMode: 'screen', filter: 'brightness(1.1) contrast(1.05)' }}
