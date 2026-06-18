@@ -6,11 +6,12 @@ import { useStore } from '../context/StoreContext'
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [logoErr, setLogoErr] = useState(false)
   const { cartCount, setCartOpen } = useStore()
   const location = useLocation()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
+    const onScroll = () => setScrolled(window.scrollY > 30)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -27,31 +28,52 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'nav-blur bg-brand-black/90 shadow-lg shadow-black/40 py-2' : 'bg-transparent py-4'
-      }`}>
-        <div className="max-w-6xl mx-auto px-4 md:px-8 flex items-center justify-between">
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${
+          scrolled ? 'nav-blur py-3' : 'bg-transparent py-5'
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-5 md:px-10 flex items-center justify-between">
+
           {/* Logo */}
-          <Link to="/" className="flex items-center group">
-            <img
-              src="/logo.jpeg"
-              alt="22 Artistry Luxury Hairs"
-              className="h-12 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-              onError={e => {
-                e.target.style.display = 'none'
-                e.target.nextSibling.style.display = 'flex'
-              }}
-            />
-            {/* Fallback if logo.png not yet added */}
-            <div style={{ display: 'none' }} className="items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-pink-gradient flex items-center justify-center text-white font-playfair font-bold text-lg shadow-lg">
-                22
+          <Link to="/" className="flex items-center">
+            {!logoErr ? (
+              /*
+                The logo PNG has a white background.
+                mix-blend-mode: multiply makes the white background
+                disappear on dark surfaces while keeping the coloured marks.
+              */
+              <img
+                src="/logo.jpeg"
+                alt="22 Artistry Luxury Hairs"
+                className="h-11 md:h-13 w-auto object-contain"
+                style={{ mixBlendMode: 'screen', filter: 'brightness(1.1) contrast(1.05)' }}
+                onError={() => setLogoErr(true)}
+              />
+            ) : (
+              /* Text fallback */
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-base shrink-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #E4156B, #9C0050)',
+                    fontFamily: '"Cormorant Garant"',
+                    fontSize: '1.05rem',
+                  }}
+                >
+                  22
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-sm leading-none"
+                    style={{ fontFamily: '"Cormorant Garant"', letterSpacing: '.04em' }}>
+                    22 Artistry
+                  </p>
+                  <p className="text-brand-pink font-sans text-[10px] tracking-widest uppercase leading-none mt-0.5">
+                    Luxury Hairs
+                  </p>
+                </div>
               </div>
-              <div className="hidden sm:block">
-                <p className="font-playfair font-bold text-white text-sm leading-tight">22 Artistry</p>
-                <p className="text-brand-pink text-xs font-poppins tracking-widest">LUXURY HAIRS</p>
-              </div>
-            </div>
+            )}
           </Link>
 
           {/* Desktop links */}
@@ -62,8 +84,8 @@ export default function Navbar() {
                 to={link.to}
                 end={link.to === '/'}
                 className={({ isActive }) =>
-                  `animated-underline font-poppins text-sm font-medium transition-colors ${
-                    isActive ? 'text-brand-pink' : 'text-gray-300 hover:text-white'
+                  `link-line font-sans text-sm font-medium transition-colors duration-200 ${
+                    isActive ? 'text-brand-pink' : 'text-gray-400 hover:text-white'
                   }`
                 }
               >
@@ -72,16 +94,17 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Right side */}
+          {/* Right */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setCartOpen(true)}
-              className="relative p-2 text-gray-300 hover:text-brand-pink transition-colors"
-              aria-label="Open cart"
+              className="relative p-2 text-gray-400 hover:text-brand-pink transition-colors"
+              aria-label="Cart"
             >
-              <ShoppingBag size={22} />
+              <ShoppingBag size={20} />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-brand-pink text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold animate-fade-in">
+                <span className="absolute -top-1 -right-1 bg-brand-pink text-white text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-medium"
+                  style={{ width: 18, height: 18, fontSize: 10 }}>
                   {cartCount}
                 </span>
               )}
@@ -90,48 +113,51 @@ export default function Navbar() {
               href="https://wa.me/2349075341220"
               target="_blank"
               rel="noreferrer"
-              className="hidden sm:block btn-primary text-sm py-2 px-5"
+              className="hidden sm:inline-flex btn-primary py-2.5 px-5 text-xs"
             >
               WhatsApp Us
             </a>
             <button
               onClick={() => setMenuOpen(v => !v)}
-              className="md:hidden p-2 text-gray-300 hover:text-white"
-              aria-label="Toggle menu"
+              className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
             >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile menu */}
-      <div className={`fixed inset-0 z-40 transition-all duration-300 md:hidden ${
+      {/* Mobile drawer */}
+      <div className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ${
         menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       }`}>
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-        <div className={`absolute top-0 right-0 h-full w-72 bg-brand-card border-l border-brand-border flex flex-col pt-24 pb-8 px-6 transition-transform duration-300 ${
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+        <div className={`absolute top-0 right-0 h-full w-72 border-l border-brand-border flex flex-col pt-20 pb-10 px-7 transition-transform duration-300 ${
           menuOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}>
-          {links.map(link => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.to === '/'}
-              className={({ isActive }) =>
-                `py-4 border-b border-brand-border font-poppins font-medium text-base transition-colors ${
-                  isActive ? 'text-brand-pink' : 'text-gray-200 hover:text-brand-pink'
-                }`
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
+        }`}
+          style={{ background: '#0D000A' }}
+        >
+          <div className="space-y-1">
+            {links.map(link => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.to === '/'}
+                className={({ isActive }) =>
+                  `block py-4 border-b border-brand-border/40 font-sans font-medium text-base transition-colors ${
+                    isActive ? 'text-brand-pink' : 'text-gray-300 hover:text-white'
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </div>
           <a
             href="https://wa.me/2349075341220"
             target="_blank"
             rel="noreferrer"
-            className="btn-primary text-center mt-6"
+            className="btn-primary text-center mt-8 w-full"
           >
             Chat on WhatsApp
           </a>

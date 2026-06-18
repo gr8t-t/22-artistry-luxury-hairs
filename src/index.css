@@ -3,135 +3,203 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
-    background-color: #0D0008;
-    color: #ffffff;
-    font-family: 'Poppins', sans-serif;
+    background-color: #080005;
+    color: #f0eaed;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  #root {
-    width: 100%;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+  #root { width: 100%; min-height: 100vh; display: flex; flex-direction: column; }
 
-  h1, h2, h3 {
-    font-family: 'Playfair Display', serif;
+  h1, h2, h3, h4 {
+    font-family: 'Cormorant Garant', Georgia, serif;
+    line-height: 1.05;
+    font-weight: 600;
+    color: #fff;
   }
 }
 
 @layer components {
+  /* Buttons */
   .btn-primary {
-    @apply bg-brand-pink text-white font-poppins font-semibold px-7 py-3 rounded-full
-           transition-all duration-300 hover:bg-brand-dark hover:scale-105
-           active:scale-95 shadow-lg hover:shadow-brand-pink/30;
+    @apply inline-flex items-center justify-center gap-2
+           bg-brand-pink text-white text-sm font-sans font-medium
+           px-7 py-3.5 rounded-full
+           transition-all duration-300
+           hover:bg-brand-dark hover:scale-[1.03]
+           active:scale-95;
+    box-shadow: 0 4px 24px rgba(228,21,107,0.25);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 6px 30px rgba(228,21,107,0.4);
   }
 
   .btn-outline {
-    @apply border border-brand-pink text-brand-pink font-poppins font-semibold px-7 py-3
-           rounded-full transition-all duration-300 hover:bg-brand-pink hover:text-white
-           hover:scale-105 active:scale-95;
+    @apply inline-flex items-center justify-center gap-2
+           border border-brand-pink/60 text-brand-pink text-sm font-sans font-medium
+           px-7 py-3.5 rounded-full
+           transition-all duration-300
+           hover:bg-brand-pink hover:text-white hover:border-brand-pink hover:scale-[1.03]
+           active:scale-95;
   }
 
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 text-sm font-sans font-medium
+           text-gray-400 hover:text-white transition-colors duration-200;
+  }
+
+  /* Cards */
   .glass-card {
-    @apply bg-white/5 backdrop-blur-sm border border-brand-border rounded-2xl;
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
   }
 
-  .section-title {
-    @apply font-playfair text-3xl md:text-4xl font-bold text-white;
+  .card-hover {
+    transition: all 0.4s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 24px 48px rgba(228,21,107,0.12);
   }
 
-  .section-subtitle {
-    @apply text-brand-pink font-poppins text-sm font-semibold tracking-widest uppercase mb-3;
+  /* Typography */
+  .display-xl {
+    font-family: 'Cormorant Garant', serif;
+    font-size: clamp(3.5rem, 9vw, 7.5rem);
+    font-weight: 600;
+    line-height: .95;
+    letter-spacing: -0.02em;
+    color: #fff;
   }
 
-  .page-section {
-    @apply py-16 md:py-24 px-4 md:px-8 max-w-6xl mx-auto w-full;
+  .display-lg {
+    font-family: 'Cormorant Garant', serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 600;
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    color: #fff;
   }
 
+  .display-md {
+    font-family: 'Cormorant Garant', serif;
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    color: #fff;
+  }
+
+  .eyebrow {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: #E4156B;
+  }
+
+  .body-copy {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: #a08090;
+  }
+
+  /* Layout */
+  .section-title { @apply display-md; }
+  .section-subtitle { @apply eyebrow mb-3; }
+  .page-section { @apply py-20 md:py-28 px-5 md:px-10 max-w-6xl mx-auto w-full; }
+
+  /* Form */
   .input-field {
-    @apply w-full bg-brand-card border border-brand-border rounded-xl px-4 py-3
-           text-white placeholder-gray-500 focus:outline-none focus:border-brand-pink
-           transition-colors duration-200 font-poppins text-sm;
+    @apply w-full bg-brand-card border border-brand-border rounded-xl px-4 py-3.5
+           text-white placeholder-gray-600 focus:outline-none focus:border-brand-pink/50
+           transition-colors duration-200 text-sm font-sans;
+  }
+
+  /* Divider */
+  .pink-rule {
+    width: 48px;
+    height: 1.5px;
+    background: linear-gradient(90deg, #E4156B, transparent);
   }
 }
 
 @layer utilities {
   .text-gradient {
-    background: linear-gradient(135deg, #E4156B, #FF6BA8);
+    background: linear-gradient(135deg, #E4156B 0%, #FF6BA8 60%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .bg-pink-gradient {
-    background: linear-gradient(135deg, #E4156B 0%, #9C0050 100%);
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #E4156B, #c97070);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  .pink-glow {
-    box-shadow: 0 0 30px rgba(228, 21, 107, 0.3);
-  }
+  .bg-pink-gradient { background: linear-gradient(135deg, #E4156B 0%, #9C0050 100%); }
 
-  .card-hover {
-    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-pink/20;
-  }
+  .pink-glow { box-shadow: 0 0 40px rgba(228,21,107,0.25); }
+  .pink-glow-lg { box-shadow: 0 0 80px rgba(228,21,107,0.18); }
 
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Grain texture overlay */
+  .grain::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: .3;
+    pointer-events: none;
+    z-index: 1;
   }
 }
 
-/* Animated underline */
-.animated-underline {
+/* ── Nav ── */
+.nav-blur {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: rgba(8,0,5,0.85);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* ── Animated underline ── */
+.link-line {
   position: relative;
-  display: inline-block;
 }
-.animated-underline::after {
+.link-line::after {
   content: '';
   position: absolute;
-  left: 0;
-  bottom: -4px;
-  width: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #E4156B, #FF6BA8);
-  transition: width 0.3s ease;
+  left: 0; bottom: -3px;
+  width: 0; height: 1px;
+  background: #E4156B;
+  transition: width .35s ease;
 }
-.animated-underline:hover::after {
-  width: 100%;
-}
+.link-line:hover::after { width: 100%; }
 
-/* Sticky nav blur */
-.nav-blur {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-/* Loading spinner */
+/* ── Spinner ── */
 .spinner {
-  border: 3px solid rgba(228, 21, 107, 0.2);
+  width: 20px; height: 20px;
+  border: 2px solid rgba(228,21,107,0.2);
   border-top-color: #E4156B;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 0.8s linear infinite;
+  animation: spin .7s linear infinite;
 }
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
