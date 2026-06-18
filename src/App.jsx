@@ -11,6 +11,7 @@ import Shop from './pages/Shop'
 import Booking from './pages/Booking'
 import About from './pages/About'
 import Admin from './pages/Admin'
+import Announcements from './pages/Announcements'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/booking" element={<Booking />} />
             <Route path="/about" element={<About />} />
+            <Route path="/announcements" element={<Announcements />} />
             <Route path="/admin" element={<Admin />} />
           </Routes>
         </Layout>

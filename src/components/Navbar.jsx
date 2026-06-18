@@ -21,6 +21,7 @@ export default function Navbar() {
     { to: '/', label: 'Home' },
     { to: '/gallery', label: 'Gallery' },
     { to: '/shop', label: 'Shop' },
+    { to: '/announcements', label: 'Events' },
     { to: '/booking', label: 'Book Now' },
     { to: '/about', label: 'About' },
   ]
