@@ -15,7 +15,7 @@ export default function About() {
       <div className="relative min-h-[60vh] flex items-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url('/ceo.jpg')` }}
+          style={{ backgroundImage: `url('/ceo.jpeg')` }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-brand-black via-brand-black/88 to-brand-black/30" />
         <div className="relative z-10 page-section py-0">
@@ -80,7 +80,7 @@ export default function About() {
             <div className="relative shrink-0">
               <div className="absolute inset-0 rounded-full bg-pink-gradient opacity-15 blur-2xl scale-110" />
               <img
-                src="/ceo.jpg"
+                src="/ceo.jpeg"
                 alt="Founder & CEO — 22 Artistry Luxury Hairs"
                 className="relative w-52 h-52 md:w-64 md:h-64 rounded-full object-cover object-top border-2 border-brand-pink/40 shadow-2xl"
                 onError={e => {

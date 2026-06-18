@@ -53,7 +53,7 @@ export default function Home() {
       <section className="relative min-h-screen flex items-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url('/ceo.jpg')` }}
+          style={{ backgroundImage: `url('/ceo.jpeg')` }}
           onError={() => {}}
         />
         {/* Fallback bg */}

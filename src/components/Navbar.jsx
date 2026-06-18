@@ -34,7 +34,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center group">
             <img
-              src="/logo.png"
+              src="/logo.jpeg"
               alt="22 Artistry Luxury Hairs"
               className="h-12 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
               onError={e => {
