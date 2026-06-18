@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useStore } from '../context/StoreContext'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
-  Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone,
+  Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone, Upload,
 } from 'lucide-react'
 
 const ADMIN_PASSWORD = 'artistry2024'
@@ -11,6 +11,83 @@ const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 
 const BLANK_PRODUCT = { name: '', category: 'Hair', price: '', quantity: '', description: '', image: '', featured: false }
 const BLANK_IMAGE = { url: '', caption: '' }
+
+/* Converts a File to a base64 data-URL so it can be stored in localStorage */
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = e => resolve(e.target.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+/* Reusable image-upload field: paste URL OR pick from device */
+function ImageField({ label, value, onChange }) {
+  const inputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const dataUrl = await readFileAsDataURL(file)
+      onChange(dataUrl)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  return (
+    <div>
+      {label && <label className="text-xs text-gray-400 font-poppins mb-1 block">{label}</label>}
+      <div className="flex gap-2">
+        <input
+          className="input-field flex-1"
+          placeholder="Paste image URL  —  or use Upload button →"
+          value={value.startsWith('data:') ? '(uploaded from device)' : value}
+          onChange={e => onChange(e.target.value)}
+          readOnly={value.startsWith('data:')}
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-brand-pink/40 text-brand-pink text-xs font-poppins font-medium hover:bg-brand-pink hover:text-white transition-all disabled:opacity-50"
+        >
+          {uploading ? <span className="spinner" /> : <Upload size={14} />}
+          {uploading ? 'Loading…' : 'Upload'}
+        </button>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="shrink-0 w-10 rounded-xl border border-brand-border text-gray-500 hover:text-red-400 hover:border-red-400/30 transition-all text-xs flex items-center justify-center"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      {/* Hidden file input — accepts images, opens camera on mobile */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFile}
+      />
+      {value && (
+        <img
+          src={value}
+          alt="preview"
+          className="mt-3 rounded-xl max-h-40 object-cover border border-brand-border"
+        />
+      )}
+    </div>
+  )
+}
 
 export default function Admin() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem('artistry_admin') === '1')
@@ -232,9 +309,11 @@ export default function Admin() {
                       onChange={e => setProductForm(p => ({ ...p, quantity: e.target.value }))} />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs text-gray-400 font-poppins mb-1 block">Image URL</label>
-                    <input className="input-field" placeholder="https://..." value={productForm.image}
-                      onChange={e => setProductForm(p => ({ ...p, image: e.target.value }))} />
+                    <ImageField
+                      label="Product Image"
+                      value={productForm.image}
+                      onChange={v => setProductForm(p => ({ ...p, image: v }))}
+                    />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="text-xs text-gray-400 font-poppins mb-1 block">Description</label>
@@ -316,9 +395,11 @@ export default function Admin() {
                 <h3 className="font-playfair text-white font-semibold mb-4">Add Gallery Photo</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs text-gray-400 font-poppins mb-1 block">Image URL *</label>
-                    <input className="input-field" placeholder="https://..." value={imageForm.url}
-                      onChange={e => setImageForm(f => ({ ...f, url: e.target.value }))} />
+                    <ImageField
+                      label="Gallery Photo *"
+                      value={imageForm.url}
+                      onChange={v => setImageForm(f => ({ ...f, url: v }))}
+                    />
                   </div>
                   <div>
                     <label className="text-xs text-gray-400 font-poppins mb-1 block">Caption</label>
@@ -507,16 +588,11 @@ export default function Admin() {
               <h3 className="font-playfair text-white font-semibold mb-5">Post New Announcement</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-gray-400 font-poppins mb-1 block">Flyer / Image URL</label>
-                  <input
-                    className="input-field"
-                    placeholder="https://... (paste image URL of your flyer)"
+                  <ImageField
+                    label="Flyer / Poster Image"
                     value={annForm.imageUrl}
-                    onChange={e => setAnnForm(f => ({ ...f, imageUrl: e.target.value }))}
+                    onChange={v => setAnnForm(f => ({ ...f, imageUrl: v }))}
                   />
-                  {annForm.imageUrl && (
-                    <img src={annForm.imageUrl} alt="preview" className="mt-3 rounded-xl max-h-48 object-cover border border-brand-border" />
-                  )}
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 font-poppins mb-1 block">Headline (optional)</label>
