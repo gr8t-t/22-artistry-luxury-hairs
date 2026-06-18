@@ -5,5 +5,5 @@ import react from '@vitejs/plugin-react'
 // base: '/' for custom domain / Netlify / Vercel
 export default defineConfig({
   plugins: [react()],
-  base: '/22-artistry-luxury-hairs/',
+  base: '/',
 })
