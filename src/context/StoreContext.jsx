@@ -75,6 +75,11 @@ export function StoreProvider({ children }) {
     catch { return [] }
   })
 
+  const [announcements, setAnnouncements] = useState(() => {
+    try { const s = localStorage.getItem('artistry_announcements'); return s ? JSON.parse(s) : [] }
+    catch { return [] }
+  })
+
   const [cart, setCart] = useState([])
   const [cartOpen, setCartOpen] = useState(false)
 
@@ -82,6 +87,7 @@ export function StoreProvider({ children }) {
   useEffect(() => { localStorage.setItem('artistry_gallery', JSON.stringify(gallery)) }, [gallery])
   useEffect(() => { localStorage.setItem('artistry_bookings', JSON.stringify(bookings)) }, [bookings])
   useEffect(() => { localStorage.setItem('artistry_reviews', JSON.stringify(reviews)) }, [reviews])
+  useEffect(() => { localStorage.setItem('artistry_announcements', JSON.stringify(announcements)) }, [announcements])
 
   // Products CRUD
   const addProduct = (product) => setProducts(prev => [...prev, { ...product, id: Date.now().toString() }])
@@ -114,6 +120,13 @@ export function StoreProvider({ children }) {
   const approveReview = (id) => setReviews(prev => prev.map(r => r.id === id ? { ...r, approved: true } : r))
   const deleteReview = (id) => setReviews(prev => prev.filter(r => r.id !== id))
 
+  // Announcements
+  const addAnnouncement = (ann) => setAnnouncements(prev => [
+    ...prev,
+    { ...ann, id: Date.now().toString(), createdAt: new Date().toISOString() },
+  ])
+  const deleteAnnouncement = (id) => setAnnouncements(prev => prev.filter(a => a.id !== id))
+
   // Cart
   const addToCart = (product) => {
     setCart(prev => {
@@ -144,6 +157,7 @@ export function StoreProvider({ children }) {
       gallery, addGalleryImage, deleteGalleryImage,
       bookings, addBooking, updateBookingStatus,
       reviews, addReview, approveReview, deleteReview,
+      announcements, addAnnouncement, deleteAnnouncement,
       cart, cartOpen, setCartOpen, addToCart, removeFromCart,
       updateCartQty, clearCart, cartTotal, cartCount, checkoutViaWhatsApp,
     }}>

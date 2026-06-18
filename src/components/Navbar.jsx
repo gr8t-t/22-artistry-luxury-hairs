@@ -6,7 +6,6 @@ import { useStore } from '../context/StoreContext'
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [logoErr, setLogoErr] = useState(false)
   const { cartCount, setCartOpen } = useStore()
   const location = useLocation()
 
@@ -35,45 +34,27 @@ export default function Navbar() {
       >
         <div className="max-w-6xl mx-auto px-5 md:px-10 flex items-center justify-between">
 
-          {/* Logo */}
-          <Link to="/" className="flex items-center">
-            {!logoErr ? (
-              /*
-                The logo PNG has a white background.
-                mix-blend-mode: multiply makes the white background
-                disappear on dark surfaces while keeping the coloured marks.
-              */
-              <img
-                src="/logo.png"
-                alt="22 Artistry Luxury Hairs"
-                className="h-11 md:h-13 w-auto object-contain"
-                style={{ mixBlendMode: 'screen', filter: 'brightness(1.1) contrast(1.05)' }}
-                onError={() => setLogoErr(true)}
-              />
-            ) : (
-              /* Text fallback */
-              <div className="flex items-center gap-2.5">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-base shrink-0"
-                  style={{
-                    background: 'linear-gradient(135deg, #E4156B, #9C0050)',
-                    fontFamily: '"Cormorant Garant"',
-                    fontSize: '1.05rem',
-                  }}
-                >
-                  22
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-sm leading-none"
-                    style={{ fontFamily: '"Cormorant Garant"', letterSpacing: '.04em' }}>
-                    22 Artistry
-                  </p>
-                  <p className="text-brand-pink font-sans text-[10px] tracking-widest uppercase leading-none mt-0.5">
-                    Luxury Hairs
-                  </p>
-                </div>
-              </div>
-            )}
+          {/* Brand name */}
+          <Link to="/" className="flex items-center gap-2.5">
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, #E4156B, #9C0050)',
+                fontFamily: '"Cormorant Garant"',
+                fontSize: '1.05rem',
+              }}
+            >
+              22
+            </div>
+            <div>
+              <p className="text-white font-semibold text-sm leading-none"
+                style={{ fontFamily: '"Cormorant Garant"', letterSpacing: '.04em' }}>
+                22 Artistry
+              </p>
+              <p className="text-brand-pink font-sans text-[10px] tracking-widest uppercase leading-none mt-0.5">
+                Luxury Hairs
+              </p>
+            </div>
           </Link>
 
           {/* Desktop links */}

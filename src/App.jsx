@@ -4,6 +4,7 @@ import { StoreProvider } from './context/StoreContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import CartDrawer from './components/CartDrawer'
+import AnnouncementModal from './components/AnnouncementModal'
 import Home from './pages/Home'
 import Gallery from './pages/Gallery'
 import Shop from './pages/Shop'
@@ -25,6 +26,7 @@ function Layout({ children }) {
     <>
       <ScrollToTop />
       {!isAdmin && <Navbar />}
+      {!isAdmin && <AnnouncementModal />}
       <CartDrawer />
       <main className="flex-1 flex flex-col">
         {children}

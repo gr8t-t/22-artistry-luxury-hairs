@@ -205,6 +205,33 @@
 }
 .link-line:hover::after { width: 100%; }
 
+/* ── Keyframes (defined here so inline style animations always work) ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(50px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes lineGrow {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+@keyframes pulsePink {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(228,21,107,0.5); }
+  50%       { box-shadow: 0 0 0 14px rgba(228,21,107,0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ── Spinner ── */
 .spinner {
   width: 20px; height: 20px;
@@ -213,4 +240,3 @@
   border-radius: 50%;
   animation: spin .7s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }

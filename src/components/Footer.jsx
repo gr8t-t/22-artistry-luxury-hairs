@@ -87,6 +87,12 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-playfair font-semibold mb-4">Contact Us</h4>
             <ul className="space-y-4">
+              <li className="flex items-start gap-3 text-gray-400">
+                <MapPin size={16} className="text-brand-pink shrink-0 mt-0.5" />
+                <span className="text-sm font-poppins leading-relaxed">
+                  No. 13 Okpe Road, Opposite Wetland Microfinance Bank, Sapele, Delta State
+                </span>
+              </li>
               <li>
                 <a
                   href="https://wa.me/2349075341220"

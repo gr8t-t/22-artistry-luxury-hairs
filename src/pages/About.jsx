@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { Heart, Award, Users, Sparkles } from 'lucide-react'
+import { Heart, Award, Users, Sparkles, MapPin, Phone, Clock } from 'lucide-react'
+import InstagramIcon from '../components/InstagramIcon'
 
 const VALUES = [
   { icon: Heart, title: 'Passion for Beauty', desc: 'Every client deserves to feel beautiful. We pour dedication into every service we deliver.' },
@@ -113,6 +114,93 @@ export default function About() {
                   className="btn-outline text-sm"
                 >
                   WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Location */}
+      <section className="page-section">
+        <div className="text-center mb-12">
+          <p className="section-subtitle">Find Us</p>
+          <h2 className="section-title">Our <span className="text-gradient">Location</span></h2>
+          <p className="text-gray-400 font-poppins mt-3 max-w-lg mx-auto text-sm">
+            No. 13 Okpe Road, Opposite Wetland Microfinance Bank, Sapele, Delta State
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          {/* Map embed */}
+          <div className="rounded-2xl overflow-hidden border border-brand-border" style={{ height: 380 }}>
+            <iframe
+              title="22 Artistry Location"
+              src="https://maps.google.com/maps?q=Okpe+Road,+Sapele,+Delta+State,+Nigeria&output=embed"
+              width="100%"
+              height="100%"
+              style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+
+          {/* Contact details */}
+          <div className="space-y-5">
+            <div className="glass-card rounded-2xl p-6 flex gap-4">
+              <div className="w-10 h-10 rounded-xl bg-brand-pink/10 border border-brand-pink/20 flex items-center justify-center shrink-0">
+                <MapPin size={18} className="text-brand-pink" />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm" style={{ fontFamily: '"Cormorant Garant"', fontSize: '1rem' }}>Address</p>
+                <p className="text-gray-400 font-poppins text-sm mt-1 leading-relaxed">
+                  No. 13 Okpe Road, Opposite Wetland Microfinance Bank<br />Sapele, Delta State, Nigeria
+                </p>
+                <a
+                  href="https://maps.google.com/?q=Okpe+Road,+Sapele,+Delta+State,+Nigeria"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-brand-pink text-xs font-poppins hover:underline mt-2 inline-block"
+                >
+                  Open in Google Maps →
+                </a>
+              </div>
+            </div>
+
+            <div className="glass-card rounded-2xl p-6 flex gap-4">
+              <div className="w-10 h-10 rounded-xl bg-brand-pink/10 border border-brand-pink/20 flex items-center justify-center shrink-0">
+                <Phone size={18} className="text-brand-pink" />
+              </div>
+              <div>
+                <p className="text-white font-semibold" style={{ fontFamily: '"Cormorant Garant"', fontSize: '1rem' }}>Phone / WhatsApp</p>
+                <a href="https://wa.me/2349075341220" target="_blank" rel="noreferrer"
+                  className="text-gray-400 font-poppins text-sm mt-1 hover:text-brand-pink transition-colors block">
+                  +234 907 534 1220
+                </a>
+              </div>
+            </div>
+
+            <div className="glass-card rounded-2xl p-6 flex gap-4">
+              <div className="w-10 h-10 rounded-xl bg-brand-pink/10 border border-brand-pink/20 flex items-center justify-center shrink-0">
+                <Clock size={18} className="text-brand-pink" />
+              </div>
+              <div>
+                <p className="text-white font-semibold" style={{ fontFamily: '"Cormorant Garant"', fontSize: '1rem' }}>Opening Hours</p>
+                <p className="text-gray-400 font-poppins text-sm mt-1">Monday – Saturday: 9:00am – 7:00pm</p>
+                <p className="text-gray-400 font-poppins text-sm">Sunday: By appointment only</p>
+              </div>
+            </div>
+
+            <div className="glass-card rounded-2xl p-6 flex gap-4">
+              <div className="w-10 h-10 rounded-xl bg-brand-pink/10 border border-brand-pink/20 flex items-center justify-center shrink-0">
+                <InstagramIcon size={18} className="text-brand-pink" />
+              </div>
+              <div>
+                <p className="text-white font-semibold" style={{ fontFamily: '"Cormorant Garant"', fontSize: '1rem' }}>Instagram</p>
+                <a href="https://www.instagram.com/22artistry_luxuryhairs" target="_blank" rel="noreferrer"
+                  className="text-gray-400 font-poppins text-sm mt-1 hover:text-brand-pink transition-colors block">
+                  @22artistry_luxuryhairs
                 </a>
               </div>
             </div>

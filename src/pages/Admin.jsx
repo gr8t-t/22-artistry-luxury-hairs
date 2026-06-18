@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useStore } from '../context/StoreContext'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
-  Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare,
+  Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone,
 } from 'lucide-react'
 
 const ADMIN_PASSWORD = 'artistry2024'
-const TABS = ['Products', 'Gallery', 'Bookings', 'Reviews']
+const TABS = ['Products', 'Gallery', 'Bookings', 'Reviews', 'Announcements']
 const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 
 const BLANK_PRODUCT = { name: '', category: 'Hair', price: '', quantity: '', description: '', image: '', featured: false }
@@ -24,6 +24,7 @@ export default function Admin() {
     gallery, addGalleryImage, deleteGalleryImage,
     bookings, updateBookingStatus,
     reviews, approveReview, deleteReview,
+    announcements, addAnnouncement, deleteAnnouncement,
   } = useStore()
 
   // Product state
@@ -34,6 +35,10 @@ export default function Admin() {
   // Gallery state
   const [showImageForm, setShowImageForm] = useState(false)
   const [imageForm, setImageForm] = useState(BLANK_IMAGE)
+
+  // Announcement state
+  const [annForm, setAnnForm] = useState({ title: '', message: '', imageUrl: '', expiresAt: '' })
+  const [annSaving, setAnnSaving] = useState(false)
 
   const login = (e) => {
     e.preventDefault()
@@ -481,6 +486,122 @@ export default function Admin() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── ANNOUNCEMENTS TAB ── */}
+        {tab === 'Announcements' && (
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <Megaphone size={20} className="text-brand-pink" />
+              <h2 className="font-playfair text-white font-semibold text-xl">Promotional Announcements</h2>
+            </div>
+            <p className="text-gray-500 font-poppins text-sm mb-7">
+              Post a flyer or promo banner that visitors see as a popup when they open the site. Set an expiry — it disappears automatically when time is up.
+            </p>
+
+            {/* Add form */}
+            <div className="glass-card rounded-2xl p-6 mb-8 border border-brand-pink/10">
+              <h3 className="font-playfair text-white font-semibold mb-5">Post New Announcement</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-gray-400 font-poppins mb-1 block">Flyer / Image URL</label>
+                  <input
+                    className="input-field"
+                    placeholder="https://... (paste image URL of your flyer)"
+                    value={annForm.imageUrl}
+                    onChange={e => setAnnForm(f => ({ ...f, imageUrl: e.target.value }))}
+                  />
+                  {annForm.imageUrl && (
+                    <img src={annForm.imageUrl} alt="preview" className="mt-3 rounded-xl max-h-48 object-cover border border-brand-border" />
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-poppins mb-1 block">Headline (optional)</label>
+                  <input
+                    className="input-field"
+                    placeholder="e.g. 50% OFF This Weekend!"
+                    value={annForm.title}
+                    onChange={e => setAnnForm(f => ({ ...f, title: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-poppins mb-1 block">Message (optional)</label>
+                  <textarea
+                    className="input-field resize-none"
+                    rows={2}
+                    placeholder="Short description of the promo..."
+                    value={annForm.message}
+                    onChange={e => setAnnForm(f => ({ ...f, message: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-poppins mb-1 block">Expiry Date &amp; Time *</label>
+                  <input
+                    type="datetime-local"
+                    className="input-field"
+                    value={annForm.expiresAt}
+                    onChange={e => setAnnForm(f => ({ ...f, expiresAt: e.target.value }))}
+                  />
+                  <p className="text-gray-600 text-xs font-poppins mt-1">The popup will stop showing automatically after this time.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (!annForm.expiresAt) return
+                    if (!annForm.imageUrl && !annForm.title && !annForm.message) return
+                    addAnnouncement({ ...annForm, expiresAt: new Date(annForm.expiresAt).toISOString() })
+                    setAnnForm({ title: '', message: '', imageUrl: '', expiresAt: '' })
+                  }}
+                  className="btn-primary"
+                >
+                  <Plus size={15} /> Post Announcement
+                </button>
+              </div>
+            </div>
+
+            {/* Existing announcements */}
+            <h3 className="font-playfair text-white font-semibold text-lg mb-4">Active &amp; Past Announcements</h3>
+            {announcements.length === 0 ? (
+              <div className="text-center py-12">
+                <Megaphone size={36} className="text-brand-border mx-auto mb-3" />
+                <p className="text-gray-500 font-poppins text-sm">No announcements yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {[...announcements].reverse().map(a => {
+                  const expired = new Date(a.expiresAt) < new Date()
+                  return (
+                    <div key={a.id} className={`glass-card rounded-xl p-5 border ${expired ? 'border-gray-700/30 opacity-60' : 'border-brand-pink/20'}`}>
+                      <div className="flex gap-4 items-start">
+                        {a.imageUrl && (
+                          <img src={a.imageUrl} alt="" className="w-20 h-20 rounded-xl object-cover border border-brand-border shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className={`text-xs font-poppins font-semibold px-2 py-0.5 rounded-full ${
+                              expired ? 'bg-gray-700/40 text-gray-400' : 'bg-green-500/15 text-green-400'
+                            }`}>
+                              {expired ? 'Expired' : 'Live'}
+                            </span>
+                          </div>
+                          {a.title && <p className="text-white font-poppins font-semibold text-sm">{a.title}</p>}
+                          {a.message && <p className="text-gray-400 text-xs font-poppins mt-1">{a.message}</p>}
+                          <p className="text-gray-600 text-xs font-poppins mt-2">
+                            Expires: {new Date(a.expiresAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => deleteAnnouncement(a.id)}
+                          className="w-8 h-8 rounded-lg glass-card flex items-center justify-center text-gray-500 hover:text-red-400 hover:border-red-400/30 transition-all shrink-0"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
