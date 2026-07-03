@@ -153,7 +153,7 @@ export default function About() {
                 <MapPin size={18} className="text-brand-pink" />
               </div>
               <div>
-                <p className="text-white font-semibold text-sm" style={{ fontFamily: '"Cormorant Garant"', fontSize: '1rem' }}>Address</p>
+                <p className="text-white font-semibold text-sm" style={{ fontFamily: 'Montserrat', fontSize: '1rem' }}>Address</p>
                 <p className="text-gray-400 font-poppins text-sm mt-1 leading-relaxed">
                   No. 13 Okpe Road, Opposite Wetland Microfinance Bank<br />Sapele, Delta State, Nigeria
                 </p>
@@ -173,7 +173,7 @@ export default function About() {
                 <Phone size={18} className="text-brand-pink" />
               </div>
               <div>
-                <p className="text-white font-semibold" style={{ fontFamily: '"Cormorant Garant"', fontSize: '1rem' }}>Phone / WhatsApp</p>
+                <p className="text-white font-semibold" style={{ fontFamily: 'Montserrat', fontSize: '1rem' }}>Phone / WhatsApp</p>
                 <a href="https://wa.me/2349075341220" target="_blank" rel="noreferrer"
                   className="text-gray-400 font-poppins text-sm mt-1 hover:text-brand-pink transition-colors block">
                   +234 907 534 1220
@@ -186,7 +186,7 @@ export default function About() {
                 <Clock size={18} className="text-brand-pink" />
               </div>
               <div>
-                <p className="text-white font-semibold" style={{ fontFamily: '"Cormorant Garant"', fontSize: '1rem' }}>Opening Hours</p>
+                <p className="text-white font-semibold" style={{ fontFamily: 'Montserrat', fontSize: '1rem' }}>Opening Hours</p>
                 <p className="text-gray-400 font-poppins text-sm mt-1">Monday – Saturday: 9:00am – 7:00pm</p>
                 <p className="text-gray-400 font-poppins text-sm">Sunday: By appointment only</p>
               </div>
@@ -197,7 +197,7 @@ export default function About() {
                 <InstagramIcon size={18} className="text-brand-pink" />
               </div>
               <div>
-                <p className="text-white font-semibold" style={{ fontFamily: '"Cormorant Garant"', fontSize: '1rem' }}>Instagram</p>
+                <p className="text-white font-semibold" style={{ fontFamily: 'Montserrat', fontSize: '1rem' }}>Instagram</p>
                 <a href="https://www.instagram.com/22artistry_luxuryhairs" target="_blank" rel="noreferrer"
                   className="text-gray-400 font-poppins text-sm mt-1 hover:text-brand-pink transition-colors block">
                   @22artistry_luxuryhairs

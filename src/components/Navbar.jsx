@@ -41,7 +41,7 @@ export default function Navbar() {
               className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold shrink-0"
               style={{
                 background: 'linear-gradient(135deg, #E4156B, #9C0050)',
-                fontFamily: '"Cormorant Garant"',
+                fontFamily: 'Montserrat',
                 fontSize: '1.05rem',
               }}
             >
@@ -49,7 +49,7 @@ export default function Navbar() {
             </div>
             <div>
               <p className="text-white font-semibold text-sm leading-none"
-                style={{ fontFamily: '"Cormorant Garant"', letterSpacing: '.04em' }}>
+                style={{ fontFamily: 'Montserrat', letterSpacing: '.04em' }}>
                 22 Artistry
               </p>
               <p className="text-brand-pink font-sans text-[10px] tracking-widest uppercase leading-none mt-0.5">

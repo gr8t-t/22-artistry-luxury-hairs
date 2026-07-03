@@ -95,7 +95,7 @@ export default function Announcements() {
                     {a.title && (
                       <h3
                         className="text-white font-semibold text-xl leading-snug"
-                        style={{ fontFamily: '"Cormorant Garant"' }}
+                        style={{ fontFamily: 'Montserrat' }}
                       >
                         {a.title}
                       </h3>

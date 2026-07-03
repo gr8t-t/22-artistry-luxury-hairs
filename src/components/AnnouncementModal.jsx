@@ -76,7 +76,7 @@ export default function AnnouncementModal() {
             {active.title && (
               <h3
                 className="text-white font-bold text-2xl leading-snug"
-                style={{ fontFamily: '"Cormorant Garant"' }}
+                style={{ fontFamily: 'Montserrat' }}
               >
                 {active.title}
               </h3>

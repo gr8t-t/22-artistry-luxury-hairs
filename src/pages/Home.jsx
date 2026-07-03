@@ -172,7 +172,7 @@ export default function Home() {
                   transition: `opacity .7s ${i * .1}s ease, transform .7s ${i * .1}s ease`,
                 }}
               >
-                <p className="text-gradient" style={{ fontFamily: '"Cormorant Garant"', fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700 }}>
+                <p className="text-gradient" style={{ fontFamily: 'Montserrat', fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700 }}>
                   {s.value}
                 </p>
                 <p className="body-copy text-xs mt-1">{s.label}</p>
@@ -219,7 +219,7 @@ export default function Home() {
                 <s.Icon size={18} className="text-brand-pink" />
               </div>
               <h3 className="text-white font-cormorant font-semibold text-lg mb-2 leading-snug"
-                style={{ fontFamily: '"Cormorant Garant"' }}>
+                style={{ fontFamily: 'Montserrat' }}>
                 {s.title}
               </h3>
               <p className="body-copy text-xs leading-relaxed">{s.desc}</p>
@@ -283,13 +283,13 @@ export default function Home() {
                   </div>
                   <div className="p-5">
                     <h3 className="text-white font-semibold text-base leading-snug"
-                      style={{ fontFamily: '"Cormorant Garant"', fontSize: '1.15rem' }}>
+                      style={{ fontFamily: 'Montserrat', fontSize: '1.15rem' }}>
                       {p.name}
                     </h3>
                     <p className="body-copy text-xs mt-1.5 line-clamp-2">{p.description}</p>
                     <div className="flex items-center justify-between mt-4">
                       <span className="text-gradient font-semibold"
-                        style={{ fontFamily: '"Cormorant Garant"', fontSize: '1.3rem' }}>
+                        style={{ fontFamily: 'Montserrat', fontSize: '1.3rem' }}>
                         ₦{p.price.toLocaleString()}
                       </span>
                       <button onClick={() => addToCart(p)} className="btn-primary py-2 px-4 text-xs">
