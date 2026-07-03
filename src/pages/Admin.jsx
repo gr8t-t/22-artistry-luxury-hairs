@@ -213,9 +213,6 @@ export default function Admin() {
             <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
               <Lock size={15} /> Sign In
             </button>
-            <p className="text-center text-gray-600 text-xs font-poppins">
-              Default password: <span className="text-gray-400 font-mono">artistry2024</span>
-            </p>
           </form>
         </div>
       </div>
