@@ -35,27 +35,13 @@ export default function Navbar() {
       >
         <div className="max-w-6xl mx-auto px-5 md:px-10 flex items-center justify-between">
 
-          {/* Brand name */}
-          <Link to="/" className="flex items-center gap-2.5">
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold shrink-0"
-              style={{
-                background: 'linear-gradient(135deg, #E4156B, #9C0050)',
-                fontFamily: 'Montserrat',
-                fontSize: '1.05rem',
-              }}
-            >
-              22
-            </div>
-            <div>
-              <p className="text-white font-semibold text-sm leading-none"
-                style={{ fontFamily: 'Montserrat', letterSpacing: '.04em' }}>
-                22 Artistry
-              </p>
-              <p className="text-brand-pink font-sans text-[10px] tracking-widest uppercase leading-none mt-0.5">
-                Luxury Hairs
-              </p>
-            </div>
+          {/* Logo */}
+          <Link to="/" className="flex items-center">
+            <img
+              src="/logo-light.png"
+              alt="22 Artistry Luxury Hairs"
+              className="h-12 md:h-14 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop links */}

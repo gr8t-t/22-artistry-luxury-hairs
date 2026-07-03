@@ -38,7 +38,7 @@ function useReveal(ref) {
 }
 
 export default function Home() {
-  const { products, addToCart } = useStore()
+  const { products, gallery, addToCart } = useStore()
   const featured = products.filter(p => p.featured).slice(0, 3)
   const statsRef    = useRef(null)
   const servicesRef = useRef(null)
@@ -58,7 +58,7 @@ export default function Home() {
         {/* Full-bleed background image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url('/front pics.jpeg')` }}
+          style={{ backgroundImage: `url('/front-pics.jpeg')` }}
         />
 
         {/* Gradient layers */}
@@ -380,24 +380,17 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-          {[
-            'photo-1522337360788-8b13dee7a37e',
-            'photo-1560472354-b33ff0c44a43',
-            'photo-1595476108010-b4d1f102b1b1',
-            'photo-1605497788044-5a32c7078486',
-            'photo-1519735777090-ec97162dc266',
-            'photo-1516975080664-ed2fc6a32937',
-          ].map(id => (
+          {gallery.slice(0, 6).map(img => (
             <a
-              key={id}
+              key={img.id}
               href="https://www.instagram.com/22artistry_luxuryhairs"
               target="_blank"
               rel="noreferrer"
               className="aspect-square overflow-hidden rounded-xl group relative"
             >
               <img
-                src={`https://images.unsplash.com/${id}?w=300&q=80`}
-                alt=""
+                src={img.url}
+                alt={img.caption || ''}
                 className="w-full h-full object-cover transition-transform duration-600"
                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
                 onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}

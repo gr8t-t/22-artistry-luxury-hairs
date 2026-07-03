@@ -181,11 +181,12 @@ export default function Admin() {
       <div className="min-h-screen flex items-center justify-center px-4 pt-20">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-full bg-pink-gradient flex items-center justify-center text-white font-playfair font-bold text-2xl mx-auto mb-4">
-              22
-            </div>
+            <img
+              src="/logo-light.png"
+              alt="22 Artistry Luxury Hairs"
+              className="h-20 w-auto object-contain mx-auto mb-5"
+            />
             <h1 className="font-playfair text-2xl font-bold text-white">Admin Panel</h1>
-            <p className="text-gray-500 font-poppins text-sm mt-1">22 Artistry Luxury Hairs</p>
           </div>
           <form onSubmit={login} className="glass-card rounded-2xl p-8 space-y-5">
             <div>

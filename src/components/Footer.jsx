@@ -15,14 +15,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-pink-gradient flex items-center justify-center text-white font-playfair font-bold text-xl">
-                22
-              </div>
-              <div>
-                <p className="font-playfair font-bold text-white">22 Artistry</p>
-                <p className="text-brand-pink text-xs tracking-widest font-poppins">LUXURY HAIRS</p>
-              </div>
+            <div className="mb-4">
+              <img
+                src="/logo-light.png"
+                alt="22 Artistry Luxury Hairs"
+                className="h-20 w-auto object-contain"
+              />
             </div>
             <p className="text-gray-400 text-sm font-poppins leading-relaxed">
               Your Beauty. Our Artistry.<br />Unmatched Luxury.
