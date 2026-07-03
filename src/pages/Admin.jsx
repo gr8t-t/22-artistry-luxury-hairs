@@ -226,7 +226,7 @@ export default function Admin() {
       {/* Top bar */}
       <div className="bg-brand-card border-b border-brand-border px-4 md:px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-pink-gradient flex items-center justify-center text-white font-playfair font-bold text-sm">22</div>
+          <img src="/logo-light.png" alt="22 Artistry" className="h-9 w-auto object-contain" />
           <div>
             <p className="text-white font-poppins font-semibold text-sm">Admin Dashboard</p>
             <p className="text-gray-500 text-xs font-poppins">22 Artistry Luxury Hairs</p>
