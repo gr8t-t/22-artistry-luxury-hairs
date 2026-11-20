@@ -1,42 +1,62 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ShoppingBag, Menu, X, User } from 'lucide-react'
+import {
+  ShoppingBag, User, MessageCircle, House, Images, Store, Megaphone, CalendarCheck, Info,
+} from 'lucide-react'
 import { useStore } from '../context/StoreContext'
+
+const LINKS = [
+  { to: '/',              label: 'Home',     short: 'Home',    Icon: House },
+  { to: '/gallery',       label: 'Gallery',  short: 'Gallery', Icon: Images },
+  { to: '/shop',          label: 'Shop',     short: 'Shop',    Icon: Store },
+  { to: '/announcements', label: 'Events',   short: 'Events',  Icon: Megaphone },
+  { to: '/booking',       label: 'Book Now', short: 'Book',    Icon: CalendarCheck },
+  { to: '/about',         label: 'About',    short: 'About',   Icon: Info },
+]
+
+function activeIndex(pathname) {
+  return LINKS.findIndex(l => (l.to === '/' ? pathname === '/' : pathname.startsWith(l.to)))
+}
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [ind, setInd] = useState({ left: 0, width: 0, ready: false })
+  const groupRef = useRef(null)
   const { cartCount, setCartOpen } = useStore()
-  const location = useLocation()
+  const { pathname } = useLocation()
+  const idx = activeIndex(pathname)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30)
-    window.addEventListener('scroll', onScroll)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  useEffect(() => setMenuOpen(false), [location])
-
-  const links = [
-    { to: '/', label: 'Home' },
-    { to: '/gallery', label: 'Gallery' },
-    { to: '/shop', label: 'Shop' },
-    { to: '/announcements', label: 'Events' },
-    { to: '/booking', label: 'Book Now' },
-    { to: '/about', label: 'About' },
-  ]
+  // Slide the glowing highlight under the active desktop tab
+  useLayoutEffect(() => {
+    const place = () => {
+      const el = groupRef.current?.querySelector('a[aria-current="page"]')
+      if (!el) return setInd(i => ({ ...i, ready: false }))
+      setInd({ left: el.offsetLeft, width: el.offsetWidth, ready: true })
+    }
+    place()
+    window.addEventListener('resize', place)
+    if (document.fonts?.ready) document.fonts.ready.then(place)
+    return () => window.removeEventListener('resize', place)
+  }, [pathname])
 
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled ? 'nav-blur py-3' : 'bg-transparent py-5'
         }`}
       >
-        <div className="max-w-6xl mx-auto px-5 md:px-10 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-5 md:px-10 flex items-center justify-between gap-4">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center shrink-0" aria-label="22 Artistry Luxury Hairs home">
             <img
               src="/logo-light.png"
               alt="22 Artistry Luxury Hairs"
@@ -44,16 +64,21 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* Desktop links */}
-          <div className="hidden md:flex items-center gap-8">
-            {links.map(link => (
+          {/* Desktop glass tabs */}
+          <div ref={groupRef} className="tab-group hidden md:flex" role="navigation" aria-label="Main">
+            <span
+              className="tab-indicator"
+              style={{ left: ind.left, width: ind.width, opacity: ind.ready ? 1 : 0 }}
+              aria-hidden="true"
+            />
+            {LINKS.map(link => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 end={link.to === '/'}
                 className={({ isActive }) =>
-                  `link-line font-sans text-sm font-medium transition-colors duration-200 ${
-                    isActive ? 'text-brand-pink' : 'text-gray-400 hover:text-white'
+                  `relative z-10 px-3 lg:px-4 py-2 rounded-full font-sans text-sm font-medium transition-colors duration-300 ${
+                    isActive ? 'text-white' : 'text-gray-400 hover:text-white'
                   }`
                 }
               >
@@ -63,7 +88,16 @@ export default function Navbar() {
           </div>
 
           {/* Right */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <a
+              href="https://wa.me/2349075341220"
+              target="_blank"
+              rel="noreferrer"
+              className="lg:hidden relative p-2 text-gray-400 hover:text-brand-pink transition-colors"
+              aria-label="Chat on WhatsApp"
+            >
+              <MessageCircle size={20} />
+            </a>
             <Link
               to="/account"
               className="relative p-2 text-gray-400 hover:text-brand-pink transition-colors"
@@ -78,8 +112,10 @@ export default function Navbar() {
             >
               <ShoppingBag size={20} />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-brand-pink text-white text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-medium"
-                  style={{ width: 18, height: 18, fontSize: 10 }}>
+                <span
+                  className="absolute -top-1 -right-1 bg-brand-pink text-white rounded-full flex items-center justify-center font-medium"
+                  style={{ width: 18, height: 18, fontSize: 10 }}
+                >
                   {cartCount}
                 </span>
               )}
@@ -88,60 +124,37 @@ export default function Navbar() {
               href="https://wa.me/2349075341220"
               target="_blank"
               rel="noreferrer"
-              className="hidden sm:inline-flex btn-primary py-2.5 px-5 text-xs"
+              className="hidden lg:inline-flex btn-primary py-2.5 px-5 text-xs ml-1"
             >
               WhatsApp Us
             </a>
-            <button
-              onClick={() => setMenuOpen(v => !v)}
-              className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
-            >
-              {menuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile drawer */}
-      <div className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ${
-        menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      }`}>
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-        <div className={`absolute top-0 right-0 h-full w-72 border-l border-brand-border flex flex-col pt-20 pb-10 px-7 transition-transform duration-300 ${
-          menuOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-          style={{
-            background: 'linear-gradient(160deg, rgba(40,6,28,0.88), rgba(14,0,10,0.9))',
-            backdropFilter: 'blur(28px) saturate(150%)',
-            WebkitBackdropFilter: 'blur(28px) saturate(150%)',
-          }}
-        >
-          <div className="space-y-1">
-            {links.map(link => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.to === '/'}
-                className={({ isActive }) =>
-                  `block py-4 border-b border-brand-border/40 font-sans font-medium text-base transition-colors ${
-                    isActive ? 'text-brand-pink' : 'text-gray-300 hover:text-white'
-                  }`
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </div>
-          <a
-            href="https://wa.me/2349075341220"
-            target="_blank"
-            rel="noreferrer"
-            className="btn-primary text-center mt-8 w-full"
+      {/* Mobile floating glass dock */}
+      <nav className="dock md:hidden" aria-label="Main">
+        <div className="relative grid grid-cols-6">
+          <span
+            className="dock-bubble"
+            style={{ transform: `translateX(${Math.max(idx, 0) * 100}%)`, opacity: idx >= 0 ? 1 : 0 }}
+            aria-hidden="true"
           >
-            Chat on WhatsApp
-          </a>
+            <span />
+          </span>
+          {LINKS.map(({ to, short, Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/'}
+              className="dock-tab relative flex flex-col items-center gap-1 pt-2 pb-1.5 text-gray-400"
+            >
+              <Icon size={21} className="dock-icon" strokeWidth={1.9} />
+              <span className="dock-label text-[10px] font-medium leading-none">{short}</span>
+            </NavLink>
+          ))}
         </div>
-      </div>
+      </nav>
     </>
   )
 }

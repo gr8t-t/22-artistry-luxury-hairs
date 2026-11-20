@@ -336,3 +336,73 @@ button:disabled { cursor: not-allowed; }
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Glass tab navigation (desktop group + mobile dock) ── */
+.tab-group {
+  position: relative;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.tab-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 999px;
+  background: linear-gradient(145deg, rgba(242,35,127,0.5), rgba(168,8,77,0.35));
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 22px rgba(228,21,107,0.45);
+  transition: left .5s cubic-bezier(.34,1.3,.5,1), width .5s cubic-bezier(.34,1.3,.5,1), opacity .3s ease;
+  pointer-events: none;
+}
+.tab-indicator::after {
+  content: '';
+  position: absolute;
+  left: 18%; right: 18%; bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #FF6BA8, transparent);
+  box-shadow: 0 0 10px #FF6BA8;
+}
+
+.dock {
+  position: fixed;
+  left: 12px; right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 50;
+  border-radius: 26px;
+  padding: 6px 4px;
+  background: linear-gradient(145deg, rgba(44,8,31,0.94), rgba(14,0,10,0.92));
+  backdrop-filter: blur(30px) saturate(170%);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 14px 40px rgba(0,0,0,0.5);
+}
+.dock-bubble {
+  position: absolute;
+  top: -24px; left: 0;
+  width: calc(100% / 6);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  transition: transform .5s cubic-bezier(.34,1.35,.5,1), opacity .3s ease;
+}
+.dock-bubble > span {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #F2237F, #A8084D);
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    0 0 0 5px rgba(12,0,8,0.96),
+    0 10px 28px rgba(228,21,107,0.55);
+}
+.dock-icon { transition: transform .5s cubic-bezier(.34,1.35,.5,1); }
+.dock-tab[aria-current='page'] .dock-icon { transform: translateY(-19px); color: #fff; }
+.dock-tab[aria-current='page'] .dock-label { color: #FF6BA8; }
