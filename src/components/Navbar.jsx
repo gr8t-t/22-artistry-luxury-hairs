@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ShoppingBag, Menu, X } from 'lucide-react'
+import { ShoppingBag, Menu, X, User } from 'lucide-react'
 import { useStore } from '../context/StoreContext'
 
 export default function Navbar() {
@@ -64,6 +64,13 @@ export default function Navbar() {
 
           {/* Right */}
           <div className="flex items-center gap-3">
+            <Link
+              to="/account"
+              className="relative p-2 text-gray-400 hover:text-brand-pink transition-colors"
+              aria-label="My account"
+            >
+              <User size={20} />
+            </Link>
             <button
               onClick={() => setCartOpen(true)}
               className="relative p-2 text-gray-400 hover:text-brand-pink transition-colors"

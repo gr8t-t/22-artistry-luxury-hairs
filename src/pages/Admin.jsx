@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react'
 import { useStore } from '../context/StoreContext'
+import { useAuth } from '../context/AuthContext'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
   Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone, Upload,
 } from 'lucide-react'
 
-const ADMIN_PASSWORD = 'artistry2024'
 const TABS = ['Products', 'Gallery', 'Bookings', 'Reviews', 'Announcements']
 const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 
@@ -96,10 +96,13 @@ function ImageField({ label, value, onChange }) {
 }
 
 export default function Admin() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem('artistry_admin') === '1')
+  const { user, loading: authLoading, isStaff, login: authLogin, logout: authLogout } = useAuth()
+  const authed = isStaff
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [loginError, setLoginError] = useState('')
+  const [signingIn, setSigningIn] = useState(false)
   const [tab, setTab] = useState('Products')
 
   const {
@@ -123,19 +126,26 @@ export default function Admin() {
   const [annForm, setAnnForm] = useState({ title: '', message: '', imageUrl: '', expiresAt: '' })
   const [annSaving, setAnnSaving] = useState(false)
 
-  const login = (e) => {
+  const login = async (e) => {
     e.preventDefault()
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem('artistry_admin', '1')
-      setAuthed(true)
-    } else {
-      setLoginError('Incorrect password. Please try again.')
+    setSigningIn(true)
+    setLoginError('')
+    try {
+      const u = await authLogin(identifier, password)
+      if (u.role === 'customer') {
+        await authLogout()
+        setLoginError('This account does not have admin access.')
+      }
+    } catch (err) {
+      setLoginError(err.message)
+    } finally {
+      setSigningIn(false)
+      setPassword('')
     }
   }
 
-  const logout = () => {
-    sessionStorage.removeItem('artistry_admin')
-    setAuthed(false)
+  const logout = async () => {
+    await authLogout()
     setPassword('')
   }
 
@@ -176,6 +186,9 @@ export default function Admin() {
   }
 
   // ── Login screen ──
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="spinner" /></div>
+  }
   if (!authed) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 pt-20">
@@ -190,6 +203,18 @@ export default function Admin() {
           </div>
           <form onSubmit={login} className="glass-card rounded-2xl p-8 space-y-5">
             <div>
+              <label className="block text-sm font-poppins text-gray-400 mb-2">Phone number or email</label>
+              <input
+                value={identifier}
+                onChange={e => { setIdentifier(e.target.value); setLoginError('') }}
+                placeholder="Staff or manager login"
+                autoComplete="username"
+                className="input-field"
+                autoFocus
+                required
+              />
+            </div>
+            <div>
               <label className="block text-sm font-poppins text-gray-400 mb-2">Password</label>
               <div className="relative">
                 <Lock size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -197,9 +222,10 @@ export default function Admin() {
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={e => { setPassword(e.target.value); setLoginError('') }}
-                  placeholder="Enter admin password"
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
                   className="input-field pl-10 pr-10"
-                  autoFocus
+                  required
                 />
                 <button
                   type="button"
@@ -211,8 +237,8 @@ export default function Admin() {
               </div>
               {loginError && <p className="text-red-400 text-xs font-poppins mt-2">{loginError}</p>}
             </div>
-            <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
-              <Lock size={15} /> Sign In
+            <button type="submit" disabled={signingIn} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60">
+              <Lock size={15} /> {signingIn ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
         </div>

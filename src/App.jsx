@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { StoreProvider } from './context/StoreContext'
+import { AuthProvider } from './context/AuthContext'
+import Account from './pages/Account'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import CartDrawer from './components/CartDrawer'
@@ -39,10 +41,12 @@ function Layout({ children }) {
 
 export default function App() {
   return (
+    <AuthProvider>
     <StoreProvider>
       <BrowserRouter>
         <Layout>
           <Routes>
+            <Route path="/account" element={<Account />} />
             <Route path="/" element={<Home />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/shop" element={<Shop />} />
@@ -54,5 +58,6 @@ export default function App() {
         </Layout>
       </BrowserRouter>
     </StoreProvider>
+    </AuthProvider>
   )
 }
