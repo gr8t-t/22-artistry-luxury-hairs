@@ -157,8 +157,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
           STATS
       ════════════════════════════════════════ */}
-      <section ref={statsRef} className="border-y border-brand-border"
-        style={{ background: 'linear-gradient(180deg, #0D000A 0%, #080005 100%)' }}>
+      <section ref={statsRef} className="border-y border-brand-border bg-brand-card">
         <div className="max-w-6xl mx-auto px-5 md:px-10 py-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x md:divide-brand-border">
             {STATS.map((s, i) => (
@@ -239,8 +238,7 @@ export default function Home() {
       {featured.length > 0 && (
         <section
           ref={productsRef}
-          className="py-20 md:py-28 border-y border-brand-border"
-          style={{ background: 'linear-gradient(180deg, #0D000A 0%, #080005 100%)' }}
+          className="py-20 md:py-28 border-y border-brand-border bg-brand-card"
         >
           <div className="max-w-6xl mx-auto px-5 md:px-10">
             <div className="flex items-end justify-between mb-12">

@@ -110,7 +110,11 @@ export default function Navbar() {
         <div className={`absolute top-0 right-0 h-full w-72 border-l border-brand-border flex flex-col pt-20 pb-10 px-7 transition-transform duration-300 ${
           menuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
-          style={{ background: '#0D000A' }}
+          style={{
+            background: 'linear-gradient(160deg, rgba(40,6,28,0.88), rgba(14,0,10,0.9))',
+            backdropFilter: 'blur(28px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(150%)',
+          }}
         >
           <div className="space-y-1">
             {links.map(link => (

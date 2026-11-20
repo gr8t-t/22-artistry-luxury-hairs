@@ -31,7 +31,7 @@ export default function Announcements() {
       {/* Header */}
       <div
         className="relative py-16 md:py-20 text-center overflow-hidden"
-        style={{ background: 'linear-gradient(180deg, #120009 0%, #080005 100%)' }}
+        style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(18px)' }}
       >
         <div
           className="absolute inset-0 pointer-events-none"

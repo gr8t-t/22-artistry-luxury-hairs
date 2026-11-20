@@ -41,7 +41,12 @@ export default function AnnouncementModal() {
         className={`relative z-10 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 ${
           visible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
         }`}
-        style={{ background: '#120009', border: '1px solid rgba(228,21,107,0.35)' }}
+        style={{
+          background: 'linear-gradient(150deg, rgba(48,8,34,0.92), rgba(16,0,11,0.94))',
+          backdropFilter: 'blur(28px) saturate(150%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(150%)',
+          border: '1px solid rgba(255,255,255,0.14)',
+        }}
         onClick={e => e.stopPropagation()}
       >
         {/* Close button */}
