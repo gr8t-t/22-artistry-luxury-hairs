@@ -406,3 +406,19 @@ button:disabled { cursor: not-allowed; }
 .dock-icon { transition: transform .5s cubic-bezier(.34,1.35,.5,1); }
 .dock-tab[aria-current='page'] .dock-icon { transform: translateY(-19px); color: #fff; }
 .dock-tab[aria-current='page'] .dock-label { color: #FF6BA8; }
+
+/* ── Printing receipts: only the receipt, on plain white paper ── */
+@media print {
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area {
+    position: absolute !important; left: 0; top: 0; width: 100% !important; max-width: none !important;
+    max-height: none !important; overflow: visible !important; border: none !important; border-radius: 0 !important;
+    background: #fff !important; padding: 12mm !important;
+  }
+  .print-area, .print-area * {
+    color: #000 !important; background: transparent !important; border-color: #bbb !important;
+    box-shadow: none !important; text-shadow: none !important; backdrop-filter: none !important;
+  }
+  body::before { display: none !important; }
+}

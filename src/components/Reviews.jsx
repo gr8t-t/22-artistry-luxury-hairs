@@ -57,15 +57,24 @@ export default function Reviews() {
     return e
   }
 
-  const handleSubmit = (e) => {
+  const [busy, setBusy] = useState(false)
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
-    addReview(form)
-    setForm(BLANK)
-    setErrors({})
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 4000)
+    setBusy(true)
+    try {
+      await addReview(form)
+      setForm(BLANK)
+      setErrors({})
+      setSubmitted(true)
+      setTimeout(() => setSubmitted(false), 4000)
+    } catch (err) {
+      setErrors({ form: err.message })
+    } finally {
+      setBusy(false)
+    }
   }
 
   const update = (field) => (e) => {
@@ -198,8 +207,9 @@ export default function Reviews() {
                   {errors.comment && <p className="text-red-400 text-xs font-poppins mt-1">{errors.comment}</p>}
                 </div>
 
-                <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 text-sm">
-                  <Send size={15} /> Submit Review
+                {errors.form && <p className="text-red-400 text-xs font-poppins" role="alert">{errors.form}</p>}
+                <button type="submit" disabled={busy} className="btn-primary w-full flex items-center justify-center gap-2 text-sm disabled:opacity-60">
+                  <Send size={15} /> {busy ? 'Sending…' : 'Submit Review'}
                 </button>
               </form>
             )}

@@ -1,133 +1,157 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { api } from '../lib/api'
+import { useAuth } from './AuthContext'
 
 const StoreContext = createContext(null)
 
-const DEFAULT_PRODUCTS = [
-  {
-    id: '1',
-    name: 'Brazilian Body Wave Bundle',
-    category: 'Hair',
-    price: 25000,
-    quantity: 10,
-    description: '100% virgin Brazilian hair. Soft, silky body wave texture. Available in 10" – 30".',
-    image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80',
-    featured: true,
-  },
-  {
-    id: '2',
-    name: 'Frontal Lace 13x4',
-    category: 'Hair',
-    price: 18000,
-    quantity: 8,
-    description: 'Pre-plucked hairline. Invisible knots. Swiss lace. Perfect for a natural look.',
-    image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&q=80',
-    featured: true,
-  },
-  {
-    id: '3',
-    name: 'Luxury Press-On Nails Set',
-    category: 'Accessories',
-    price: 5500,
-    quantity: 20,
-    description: 'Salon-quality press-on nails. Long-lasting adhesive. Various designs available.',
-    image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80',
-    featured: false,
-  },
-  {
-    id: '4',
-    name: 'Mink Lash Extension Set',
-    category: 'Beauty',
-    price: 4500,
-    quantity: 15,
-    description: 'Ultra-natural mink lashes. Full volume, lightweight. Reusable up to 25 times.',
-    image: 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=600&q=80',
-    featured: true,
-  },
-]
+const IMPORT_DONE_KEY = 'artistry_import_done'
 
-const DEFAULT_GALLERY = [
-  { id: '1', url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80', caption: 'Frontal Install' },
-  { id: '2', url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&q=80', caption: 'Colour Treatment' },
-  { id: '3', url: 'https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=600&q=80', caption: 'Machine Wigging' },
-  { id: '4', url: 'https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=600&q=80', caption: 'Revamp' },
-  { id: '5', url: 'https://images.unsplash.com/photo-1519735777090-ec97162dc266?w=600&q=80', caption: 'Lash Extension' },
-  { id: '6', url: 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=600&q=80', caption: 'Nail Fix' },
-]
+function readLegacy(key) {
+  try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : [] } catch { return [] }
+}
 
 export function StoreProvider({ children }) {
-  const [products, setProducts] = useState(() => {
-    try { const s = localStorage.getItem('artistry_products'); return s ? JSON.parse(s) : DEFAULT_PRODUCTS }
-    catch { return DEFAULT_PRODUCTS }
-  })
+  const { user } = useAuth()
+  const isStaff = !!user && (user.role === 'staff' || user.role === 'manager')
+  const isManager = !!user && user.role === 'manager'
 
-  const [gallery, setGallery] = useState(() => {
-    try { const s = localStorage.getItem('artistry_gallery'); return s ? JSON.parse(s) : DEFAULT_GALLERY }
-    catch { return DEFAULT_GALLERY }
-  })
-
-  const [bookings, setBookings] = useState(() => {
-    try { const s = localStorage.getItem('artistry_bookings'); return s ? JSON.parse(s) : [] }
-    catch { return [] }
-  })
-
-  const [reviews, setReviews] = useState(() => {
-    try { const s = localStorage.getItem('artistry_reviews'); return s ? JSON.parse(s) : [] }
-    catch { return [] }
-  })
-
-  const [announcements, setAnnouncements] = useState(() => {
-    try { const s = localStorage.getItem('artistry_announcements'); return s ? JSON.parse(s) : [] }
-    catch { return [] }
-  })
+  const [products, setProducts] = useState([])
+  const [gallery, setGallery] = useState([])
+  const [announcements, setAnnouncements] = useState([])
+  const [publicReviews, setPublicReviews] = useState([])
+  const [catalogLoading, setCatalogLoading] = useState(true)
+  const [bookings, setBookings] = useState([])
+  const [allReviews, setAllReviews] = useState(null) // manager only
 
   const [cart, setCart] = useState([])
   const [cartOpen, setCartOpen] = useState(false)
 
-  useEffect(() => { localStorage.setItem('artistry_products', JSON.stringify(products)) }, [products])
-  useEffect(() => { localStorage.setItem('artistry_gallery', JSON.stringify(gallery)) }, [gallery])
-  useEffect(() => { localStorage.setItem('artistry_bookings', JSON.stringify(bookings)) }, [bookings])
-  useEffect(() => { localStorage.setItem('artistry_reviews', JSON.stringify(reviews)) }, [reviews])
-  useEffect(() => { localStorage.setItem('artistry_announcements', JSON.stringify(announcements)) }, [announcements])
+  const loadCatalog = useCallback(async (fresh = false) => {
+    try {
+      // Staff always bypass the short edge cache so they never see an out-of-date list
+      const d = await api(fresh ? `/catalog?fresh=${Date.now()}` : '/catalog')
+      setProducts(d.products)
+      setGallery(d.gallery)
+      setAnnouncements(d.announcements)
+      setPublicReviews(d.reviews)
+    } catch (e) {
+      console.error('Could not load catalogue', e)
+    } finally {
+      setCatalogLoading(false)
+    }
+  }, [])
 
-  // Products CRUD
-  const addProduct = (product) => setProducts(prev => [...prev, { ...product, id: Date.now().toString() }])
-  const updateProduct = (id, updates) => setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
-  const deleteProduct = (id) => setProducts(prev => prev.filter(p => p.id !== id))
+  useEffect(() => { loadCatalog(isStaff) }, [loadCatalog, isStaff])
 
-  // Gallery CRUD
-  const addGalleryImage = (image) => setGallery(prev => [...prev, { ...image, id: Date.now().toString() }])
-  const deleteGalleryImage = (id) => setGallery(prev => prev.filter(img => img.id !== id))
+  // Staff-only data
+  useEffect(() => {
+    let cancelled = false
+    if (!isStaff) { setBookings([]); setAllReviews(null); return }
+    api('/admin/bookings').then(d => { if (!cancelled) setBookings(d.bookings) }).catch(() => {})
+    if (isManager) api('/admin/reviews').then(d => { if (!cancelled) setAllReviews(d.reviews) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [isStaff, isManager])
 
-  // Bookings
-  const addBooking = (booking) => {
-    const newBooking = { ...booking, id: Date.now().toString(), createdAt: new Date().toISOString(), status: 'pending' }
-    setBookings(prev => [...prev, newBooking])
-    return newBooking
+  // Runs an admin action; shows the server's message if it fails. Returns the result or null.
+  const act = async (fn) => {
+    try { return await fn() } catch (e) { window.alert(e.message); return null }
   }
-  const updateBookingStatus = (id, status) => setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b))
+
+  // Products
+  const addProduct = (product) => act(async () => {
+    const d = await api('/admin/products', { method: 'POST', body: product })
+    setProducts(prev => [...prev, d.product])
+    return d.product
+  })
+  const updateProduct = (id, updates) => act(async () => {
+    const current = products.find(p => p.id === id) || {}
+    const d = await api(`/admin/products/${id}`, { method: 'PATCH', body: { ...current, ...updates } })
+    setProducts(prev => prev.map(p => p.id === id ? d.product : p))
+    return d.product
+  })
+  const deleteProduct = (id) => act(async () => {
+    await api(`/admin/products/${id}`, { method: 'DELETE' })
+    setProducts(prev => prev.filter(p => p.id !== id))
+    return true
+  })
+
+  // Gallery
+  const addGalleryImage = (image) => act(async () => {
+    const d = await api('/admin/gallery', { method: 'POST', body: image })
+    setGallery(prev => [...prev, d.image])
+    return d.image
+  })
+  const deleteGalleryImage = (id) => act(async () => {
+    await api(`/admin/gallery/${id}`, { method: 'DELETE' })
+    setGallery(prev => prev.filter(g => g.id !== id))
+    return true
+  })
+
+  // Bookings (customers create; staff manage)
+  const addBooking = async (booking) => {
+    const d = await api('/bookings', { method: 'POST', body: booking })
+    if (isStaff) setBookings(prev => [d.booking, ...prev])
+    return d.booking
+  }
+  const updateBookingStatus = (id, status) => act(async () => {
+    const d = await api(`/admin/bookings/${id}`, { method: 'PATCH', body: { status } })
+    setBookings(prev => prev.map(b => b.id === id ? d.booking : b))
+    return true
+  })
 
   // Reviews
-  const addReview = (review) => {
-    const newReview = {
-      ...review,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      approved: false,
-    }
-    setReviews(prev => [...prev, newReview])
-    return newReview
+  const addReview = async (review) => {
+    const d = await api('/reviews', { method: 'POST', body: review })
+    if (isManager) setAllReviews(prev => [d.review, ...(prev || [])])
+    return d.review
   }
-  const approveReview = (id) => setReviews(prev => prev.map(r => r.id === id ? { ...r, approved: true } : r))
-  const deleteReview = (id) => setReviews(prev => prev.filter(r => r.id !== id))
+  const approveReview = (id) => act(async () => {
+    const d = await api(`/admin/reviews/${id}`, { method: 'PATCH' })
+    setAllReviews(prev => (prev || []).map(r => r.id === id ? d.review : r))
+    setPublicReviews(prev => [d.review, ...prev])
+    return true
+  })
+  const deleteReview = (id) => act(async () => {
+    await api(`/admin/reviews/${id}`, { method: 'DELETE' })
+    setAllReviews(prev => (prev || []).filter(r => r.id !== id))
+    setPublicReviews(prev => prev.filter(r => r.id !== id))
+    return true
+  })
+  const reviews = isManager && allReviews ? allReviews : publicReviews
 
   // Announcements
-  const addAnnouncement = (ann) => setAnnouncements(prev => [
-    ...prev,
-    { ...ann, id: Date.now().toString(), createdAt: new Date().toISOString() },
-  ])
-  const deleteAnnouncement = (id) => setAnnouncements(prev => prev.filter(a => a.id !== id))
+  const addAnnouncement = (ann) => act(async () => {
+    const d = await api('/admin/announcements', { method: 'POST', body: ann })
+    setAnnouncements(prev => [d.announcement, ...prev])
+    return d.announcement
+  })
+  const deleteAnnouncement = (id) => act(async () => {
+    await api(`/admin/announcements/${id}`, { method: 'DELETE' })
+    setAnnouncements(prev => prev.filter(a => a.id !== id))
+    return true
+  })
 
-  // Cart
+  // One-time: bring over anything the owner added in this browser before the database existed
+  const getLegacyData = () => {
+    try { if (localStorage.getItem(IMPORT_DONE_KEY)) return { products: [], gallery: [], announcements: [] } } catch { /* ignore */ }
+    const names = new Set(products.map(p => p.name.trim().toLowerCase()))
+    const urls = new Set(gallery.map(g => g.url))
+    const now = Date.now()
+    return {
+      products: readLegacy('artistry_products').filter(p => p?.name && !names.has(String(p.name).trim().toLowerCase())),
+      gallery: readLegacy('artistry_gallery').filter(g => g?.url && /^https:\/\//i.test(g.url) && !urls.has(g.url)),
+      announcements: readLegacy('artistry_announcements').filter(a => a?.expiresAt && new Date(a.expiresAt).getTime() > now),
+    }
+  }
+  const importLegacyData = () => act(async () => {
+    const data = getLegacyData()
+    const d = await api('/admin/import', { method: 'POST', body: data })
+    try { localStorage.setItem(IMPORT_DONE_KEY, '1') } catch { /* ignore */ }
+    await loadCatalog(true)
+    return d.imported
+  })
+
+  // Cart (kept in this browser only)
   const addToCart = (product) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === product.id)
@@ -153,11 +177,13 @@ export function StoreProvider({ children }) {
 
   return (
     <StoreContext.Provider value={{
+      catalogLoading,
       products, addProduct, updateProduct, deleteProduct,
       gallery, addGalleryImage, deleteGalleryImage,
       bookings, addBooking, updateBookingStatus,
       reviews, addReview, approveReview, deleteReview,
       announcements, addAnnouncement, deleteAnnouncement,
+      getLegacyData, importLegacyData,
       cart, cartOpen, setCartOpen, addToCart, removeFromCart,
       updateCartQty, clearCart, cartTotal, cartCount, checkoutViaWhatsApp,
     }}>

@@ -44,8 +44,9 @@ export default function Booking() {
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     setLoading(true)
 
-    setTimeout(() => {
-      const booking = addBooking(form)
+    setTimeout(async () => {
+      // Save to the salon's system. Even if this fails, the WhatsApp message below still reaches the salon.
+      try { await addBooking(form) } catch (err) { console.error('Booking not saved', err) }
 
       // Open WhatsApp with booking details
       const msg = `Hello 22 Artistry! I'd like to book an appointment.\n\n` +

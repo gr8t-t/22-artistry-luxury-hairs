@@ -3,13 +3,50 @@
 // Add new routes to the table below as we build each step.
 import { HttpError, send } from './_lib/http.js'
 import * as auth from './_lib/routes/auth.js'
+import * as catalog from './_lib/routes/catalog.js'
+import * as engage from './_lib/routes/engage.js'
+import * as payments from './_lib/routes/payments.js'
 
-const ROUTES = {
-  'POST /auth/register': auth.register,
-  'POST /auth/login': auth.login,
-  'POST /auth/logout': auth.logout,
-  'GET /auth/me': auth.me,
-}
+const ROUTES = [
+  // Accounts
+  ['POST',   '/auth/register', auth.register],
+  ['POST',   '/auth/login',    auth.login],
+  ['POST',   '/auth/logout',   auth.logout],
+  ['GET',    '/auth/me',       auth.me],
+
+  // Public
+  ['GET',    '/catalog',       catalog.publicCatalog],
+  ['POST',   '/bookings',      engage.createBooking],
+  ['POST',   '/reviews',       engage.createReview],
+
+  // Customer
+  ['GET',    '/me/payments',   payments.myPayments],
+
+  // Staff + manager
+  ['GET',    '/admin/bookings',          engage.listBookings],
+  ['PATCH',  '/admin/bookings/:id',      engage.updateBooking],
+  ['GET',    '/admin/customers/:q',      payments.searchCustomers],
+  ['GET',    '/admin/payments',          payments.listPayments],
+  ['POST',   '/admin/payments',          payments.recordPayment],
+
+  // Manager only
+  ['POST',   '/admin/payments/:id/reverse', payments.reversePayment],
+  ['GET',    '/admin/reviews',           engage.listAllReviews],
+  ['PATCH',  '/admin/reviews/:id',       engage.approveReview],
+  ['DELETE', '/admin/reviews/:id',       engage.deleteReview],
+  ['POST',   '/admin/products',          catalog.createProduct],
+  ['PATCH',  '/admin/products/:id',      catalog.updateProduct],
+  ['DELETE', '/admin/products/:id',      catalog.deleteProduct],
+  ['POST',   '/admin/gallery',           catalog.createGalleryImage],
+  ['DELETE', '/admin/gallery/:id',       catalog.deleteGalleryImage],
+  ['POST',   '/admin/announcements',     catalog.createAnnouncement],
+  ['DELETE', '/admin/announcements/:id', catalog.deleteAnnouncement],
+  ['POST',   '/admin/import',            catalog.importFromBrowser],
+].map(([method, pattern, handler]) => {
+  const names = []
+  const regex = new RegExp('^' + pattern.replace(/:([a-z]+)/g, (_, n) => { names.push(n); return '([^/]+)' }) + '$')
+  return { method, regex, names, handler }
+})
 
 function routePath(req) {
   const p = req.query?.p
@@ -19,10 +56,17 @@ function routePath(req) {
 
 export default async function handler(req, res) {
   try {
-    const key = `${req.method} ${routePath(req)}`
-    const route = ROUTES[key]
-    if (!route) throw new HttpError(404, 'Not found')
-    await route(req, res)
+    const path = routePath(req)
+    let matchedPath = false
+    for (const r of ROUTES) {
+      const m = r.regex.exec(path)
+      if (!m) continue
+      matchedPath = true
+      if (r.method !== req.method) continue
+      req.params = Object.fromEntries(r.names.map((n, i) => [n, decodeURIComponent(m[i + 1])]))
+      return await r.handler(req, res)
+    }
+    throw new HttpError(matchedPath ? 405 : 404, matchedPath ? 'Method not allowed' : 'Not found')
   } catch (e) {
     if (e instanceof HttpError) return send(res, e.status, { error: e.message })
     console.error(e)

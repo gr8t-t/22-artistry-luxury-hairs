@@ -6,7 +6,7 @@ import { useStore } from '../context/StoreContext'
 const TAGS = ['All', 'Frontal Install', 'Colour Treatment', 'Machine Wigging', 'Revamp', 'Lash Extension', 'Nail Fix']
 
 export default function Gallery() {
-  const { gallery } = useStore()
+  const { gallery, catalogLoading } = useStore()
   const [lightbox, setLightbox] = useState(null)
   const [tag, setTag] = useState('All')
 
@@ -51,7 +51,9 @@ export default function Gallery() {
         {/* Grid */}
         {filtered.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-500 font-poppins">No photos in this category yet.</p>
+            {catalogLoading
+              ? <div className="spinner mx-auto" aria-label="Loading" />
+              : <p className="text-gray-500 font-poppins">No photos in this category yet.</p>}
           </div>
         ) : (
           <div className="columns-2 md:columns-3 lg:columns-4 gap-3 space-y-3">

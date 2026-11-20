@@ -5,7 +5,7 @@ import { useStore } from '../context/StoreContext'
 const CATEGORIES = ['All', 'Hair', 'Accessories', 'Beauty']
 
 export default function Shop() {
-  const { products, addToCart } = useStore()
+  const { products, addToCart, catalogLoading } = useStore()
   const [category, setCategory] = useState('All')
   const [search, setSearch] = useState('')
   const [added, setAdded] = useState(null)
@@ -70,8 +70,12 @@ export default function Shop() {
         {/* Grid */}
         {filtered.length === 0 ? (
           <div className="text-center py-20">
-            <ShoppingBag size={48} className="text-brand-border mx-auto mb-4" />
-            <p className="text-gray-400 font-poppins">No products found.</p>
+            {catalogLoading ? <div className="spinner mx-auto" aria-label="Loading" /> : (
+              <>
+                <ShoppingBag size={48} className="text-brand-border mx-auto mb-4" />
+                <p className="text-gray-400 font-poppins">No products found.</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

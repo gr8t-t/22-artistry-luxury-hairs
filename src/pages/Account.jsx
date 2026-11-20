@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Eye, EyeOff, Copy, Check, LogOut, Phone, Mail, Gift } from 'lucide-react'
+import { Eye, EyeOff, Copy, Check, LogOut, Phone, Mail, Gift, ReceiptText } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { api } from '../lib/api'
+import { naira, dateTime, PURPOSE_LABEL } from '../lib/format'
+import Receipt from '../components/Receipt'
 
 function Field({ label, children }) {
   return (
@@ -147,7 +150,15 @@ function AuthForms() {
 function Profile() {
   const { user, logout, isStaff } = useAuth()
   const [copied, setCopied] = useState(false)
+  const [payments, setPayments] = useState(null)
+  const [receipt, setReceipt] = useState(null)
   const link = `${window.location.origin}/account?ref=${user.referralCode}`
+
+  useEffect(() => {
+    let cancelled = false
+    api('/me/payments').then(d => { if (!cancelled) setPayments(d.payments) }).catch(() => { if (!cancelled) setPayments([]) })
+    return () => { cancelled = true }
+  }, [])
 
   const copy = async () => {
     try {
@@ -200,6 +211,34 @@ function Profile() {
           Share on WhatsApp
         </a>
       </div>
+
+      <div className="glass-card rounded-2xl p-6 mt-4">
+        <div className="flex items-center gap-2 mb-3">
+          <ReceiptText size={16} className="text-brand-pink" />
+          <p className="text-white font-semibold text-sm font-poppins">My payments</p>
+        </div>
+        {payments === null ? (
+          <div className="spinner mx-auto my-4" aria-label="Loading" />
+        ) : payments.length === 0 ? (
+          <p className="body-copy text-xs">Payments you make at the salon will appear here with your receipts.</p>
+        ) : (
+          <ul className="divide-y divide-white/10">
+            {payments.map(p => (
+              <li key={p.id}>
+                <button onClick={() => setReceipt(p)} className="w-full flex items-center justify-between gap-3 py-3 text-left">
+                  <span className="min-w-0">
+                    <span className="block text-sm text-white truncate">{PURPOSE_LABEL[p.purpose] || p.purpose}</span>
+                    <span className="block text-xs text-gray-400">{dateTime(p.createdAt)} · {p.receiptNo}</span>
+                  </span>
+                  <span className={`text-sm font-semibold shrink-0 ${p.status === 'reversed' ? 'line-through text-gray-500' : 'text-white'}`}>{naira(p.amount)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {receipt && <Receipt payment={receipt} onClose={() => setReceipt(null)} />}
 
       <div className="flex flex-col gap-3 mt-6">
         {isStaff && <Link to="/admin" className="btn-primary w-full">Open admin portal</Link>}

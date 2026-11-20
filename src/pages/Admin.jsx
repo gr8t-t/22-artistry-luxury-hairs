@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react'
 import { useStore } from '../context/StoreContext'
 import { useAuth } from '../context/AuthContext'
+import PaymentsPanel from '../components/admin/PaymentsPanel'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
   Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone, Upload,
 } from 'lucide-react'
 
-const TABS = ['Products', 'Gallery', 'Bookings', 'Reviews', 'Announcements']
+const MANAGER_TABS = ['Payments', 'Bookings', 'Products', 'Gallery', 'Reviews', 'Announcements']
+const STAFF_TABS = ['Payments', 'Bookings']
 const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 
 const BLANK_PRODUCT = { name: '', category: 'Hair', price: '', quantity: '', description: '', image: '', featured: false }
@@ -103,7 +105,9 @@ export default function Admin() {
   const [showPw, setShowPw] = useState(false)
   const [loginError, setLoginError] = useState('')
   const [signingIn, setSigningIn] = useState(false)
-  const [tab, setTab] = useState('Products')
+  const [tab, setTab] = useState('Payments')
+  const isManager = user?.role === 'manager'
+  const tabs = isManager ? MANAGER_TABS : STAFF_TABS
 
   const {
     products, addProduct, updateProduct, deleteProduct,
@@ -111,6 +115,7 @@ export default function Admin() {
     bookings, updateBookingStatus,
     reviews, approveReview, deleteReview,
     announcements, addAnnouncement, deleteAnnouncement,
+    getLegacyData, importLegacyData,
   } = useStore()
 
   // Product state
@@ -149,19 +154,16 @@ export default function Admin() {
     setPassword('')
   }
 
-  const saveProduct = () => {
+  const saveProduct = async () => {
     if (!productForm.name || !productForm.price) return
     const data = {
       ...productForm,
       price: Number(productForm.price),
       quantity: Number(productForm.quantity) || 0,
     }
-    if (editProductId) {
-      updateProduct(editProductId, data)
-      setEditProductId(null)
-    } else {
-      addProduct(data)
-    }
+    const saved = editProductId ? await updateProduct(editProductId, data) : await addProduct(data)
+    if (!saved) return // the error message was already shown; keep the form open
+    setEditProductId(null)
     setProductForm(BLANK_PRODUCT)
     setShowProductForm(false)
   }
@@ -172,9 +174,10 @@ export default function Admin() {
     setShowProductForm(true)
   }
 
-  const saveImage = () => {
+  const saveImage = async () => {
     if (!imageForm.url) return
-    addGalleryImage(imageForm)
+    const saved = await addGalleryImage(imageForm)
+    if (!saved) return
     setImageForm(BLANK_IMAGE)
     setShowImageForm(false)
   }
@@ -282,12 +285,12 @@ export default function Admin() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-brand-border pb-4">
-          {TABS.map(t => (
+        <div className="flex gap-2 mb-6 border-b border-brand-border pb-4 overflow-x-auto scrollbar-hide">
+          {tabs.map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-5 py-2 rounded-full text-sm font-poppins font-medium transition-all ${
+              className={`px-5 py-2 rounded-full text-sm font-poppins font-medium transition-all whitespace-nowrap ${
                 tab === t ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-white'
               }`}
             >
@@ -296,9 +299,35 @@ export default function Admin() {
           ))}
         </div>
 
+        {/* ── PAYMENTS TAB ── */}
+        {tab === 'Payments' && <PaymentsPanel isManager={isManager} />}
+
         {/* ── PRODUCTS TAB ── */}
-        {tab === 'Products' && (
+        {isManager && tab === 'Products' && (
           <div>
+            {(() => {
+              const legacy = getLegacyData()
+              const n = legacy.products.length + legacy.gallery.length + legacy.announcements.length
+              if (!n) return null
+              return (
+                <div className="glass-card rounded-2xl p-5 mb-6 border border-brand-pink/30">
+                  <p className="text-white text-sm font-semibold font-poppins">Found items saved in this browser from before</p>
+                  <p className="text-gray-300 text-xs font-poppins mt-1">
+                    {legacy.products.length} product(s), {legacy.gallery.length} gallery photo(s), {legacy.announcements.length} active announcement(s).
+                    Copy them into the shared database so they show on every device.
+                  </p>
+                  <button
+                    onClick={async () => {
+                      const r = await importLegacyData()
+                      if (r) window.alert(`Imported: ${r.products} products, ${r.gallery} photos, ${r.announcements} announcements.`)
+                    }}
+                    className="btn-primary text-xs py-2.5 mt-3"
+                  >
+                    Import to database
+                  </button>
+                </div>
+              )
+            })()}
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-playfair text-white font-semibold text-xl">Products</h2>
               <button
@@ -408,7 +437,7 @@ export default function Admin() {
         )}
 
         {/* ── GALLERY TAB ── */}
-        {tab === 'Gallery' && (
+        {isManager && tab === 'Gallery' && (
           <div>
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-playfair text-white font-semibold text-xl">Gallery</h2>
@@ -536,7 +565,7 @@ export default function Admin() {
         )}
 
         {/* ── REVIEWS TAB ── */}
-        {tab === 'Reviews' && (
+        {isManager && tab === 'Reviews' && (
           <div>
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-playfair text-white font-semibold text-xl">
@@ -603,7 +632,7 @@ export default function Admin() {
         )}
 
         {/* ── ANNOUNCEMENTS TAB ── */}
-        {tab === 'Announcements' && (
+        {isManager && tab === 'Announcements' && (
           <div>
             <div className="flex items-center gap-3 mb-6">
               <Megaphone size={20} className="text-brand-pink" />
@@ -654,11 +683,11 @@ export default function Admin() {
                   <p className="text-gray-600 text-xs font-poppins mt-1">The popup will stop showing automatically after this time.</p>
                 </div>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!annForm.expiresAt) return
                     if (!annForm.imageUrl && !annForm.title && !annForm.message) return
-                    addAnnouncement({ ...annForm, expiresAt: new Date(annForm.expiresAt).toISOString() })
-                    setAnnForm({ title: '', message: '', imageUrl: '', expiresAt: '' })
+                    const saved = await addAnnouncement({ ...annForm, expiresAt: new Date(annForm.expiresAt).toISOString() })
+                    if (saved) setAnnForm({ title: '', message: '', imageUrl: '', expiresAt: '' })
                   }}
                   className="btn-primary"
                 >
