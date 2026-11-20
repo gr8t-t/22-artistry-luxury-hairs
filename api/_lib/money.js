@@ -11,5 +11,11 @@ export function nairaToKobo(value) {
   return kobo
 }
 
+/** Naira formatting for messages, e.g. 15000.5 -> N15,000.50 */
+export const formatNaira = (n) => {
+  const v = Number(n) || 0
+  return '₦' + v.toLocaleString('en-NG', { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 })
+}
+
 /** Integer kobo (bigint/string/number) -> naira number. */
 export const koboToNaira = (kobo) => Number(kobo) / 100

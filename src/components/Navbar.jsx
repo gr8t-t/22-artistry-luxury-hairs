@@ -4,6 +4,7 @@ import {
   ShoppingBag, User, MessageCircle, House, Images, Store, Megaphone, CalendarCheck, Info,
 } from 'lucide-react'
 import { useStore } from '../context/StoreContext'
+import NotificationBell from './NotificationBell'
 
 const LINKS = [
   { to: '/',              label: 'Home',     short: 'Home',    Icon: House },
@@ -98,6 +99,7 @@ export default function Navbar() {
             >
               <MessageCircle size={20} />
             </a>
+            <NotificationBell />
             <Link
               to="/account"
               className="relative p-2 text-gray-400 hover:text-brand-pink transition-colors"

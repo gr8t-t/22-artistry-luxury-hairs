@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useStore } from '../context/StoreContext'
 import { useAuth } from '../context/AuthContext'
 import PaymentsPanel from '../components/admin/PaymentsPanel'
+import NotificationBell from '../components/NotificationBell'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
   Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone, Upload,
@@ -261,9 +262,12 @@ export default function Admin() {
             <p className="text-gray-500 text-xs font-poppins">22 Artistry Luxury Hairs</p>
           </div>
         </div>
-        <button onClick={logout} className="flex items-center gap-2 text-gray-400 hover:text-red-400 transition-colors text-sm font-poppins">
-          <LogOut size={16} /> Logout
-        </button>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <button onClick={logout} className="flex items-center gap-2 text-gray-400 hover:text-red-400 transition-colors text-sm font-poppins">
+            <LogOut size={16} /> Logout
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

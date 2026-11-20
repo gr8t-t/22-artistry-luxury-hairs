@@ -5,6 +5,7 @@ import {
   hashPassword, verifyPassword, issueSession, clearSession, currentUser, publicUser,
 } from '../auth.js'
 import { HttpError, send, body, clientIp, normalizePhone, normalizeEmail } from '../http.js'
+import { notifyUser } from '../notify.js'
 
 // Used so a wrong identifier takes as long to reject as a wrong password
 const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 11)
@@ -65,6 +66,10 @@ export async function register(req, res) {
   if (!user) throw new HttpError(500, 'Could not create account. Please try again.')
 
   await logActivity(user.id, 'customer.registered', 'user', user.id, referredBy ? { referredBy } : null)
+  await notifyUser(user.id, {
+    type: 'system', title: 'Welcome to 22 Artistry',
+    body: 'Your account is ready. Book an appointment, shop, and watch this space for offers.', url: '/account',
+  })
   await issueSession(res, user)
   send(res, 201, { user: publicUser(user) })
 }

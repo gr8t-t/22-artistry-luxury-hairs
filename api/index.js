@@ -6,6 +6,7 @@ import * as auth from './_lib/routes/auth.js'
 import * as catalog from './_lib/routes/catalog.js'
 import * as engage from './_lib/routes/engage.js'
 import * as payments from './_lib/routes/payments.js'
+import * as notifications from './_lib/routes/notifications.js'
 
 const ROUTES = [
   // Accounts
@@ -19,8 +20,15 @@ const ROUTES = [
   ['POST',   '/bookings',      engage.createBooking],
   ['POST',   '/reviews',       engage.createReview],
 
-  // Customer
+  ['GET',    '/push/key',      notifications.pushKey],
+
+  // Any logged-in user
   ['GET',    '/me/payments',   payments.myPayments],
+  ['GET',    '/me/notifications',        notifications.listMine],
+  ['POST',   '/me/notifications/read',   notifications.markRead],
+  ['POST',   '/me/push/subscribe',       notifications.subscribe],
+  ['POST',   '/me/push/unsubscribe',     notifications.unsubscribe],
+  ['POST',   '/me/push/test',            notifications.sendTest],
 
   // Staff + manager
   ['GET',    '/admin/bookings',          engage.listBookings],

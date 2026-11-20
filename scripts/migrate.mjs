@@ -121,6 +121,30 @@ const STATEMENTS = [
   )`,
   `create index if not exists idx_payments_created on payments (created_at desc)`,
   `create index if not exists idx_payments_customer on payments (customer_id, created_at desc)`,
+
+  // ── Step 3: notifications + push subscriptions ──
+  `create table if not exists notifications (
+    id         uuid primary key default gen_random_uuid(),
+    user_id    uuid not null references users(id) on delete cascade,
+    type       text not null,
+    title      text not null,
+    body       text not null default '',
+    url        text not null default '/',
+    read_at    timestamptz,
+    created_at timestamptz not null default now()
+  )`,
+  `create index if not exists idx_notifications_user on notifications (user_id, created_at desc)`,
+  `create index if not exists idx_notifications_unread on notifications (user_id) where read_at is null`,
+  `create table if not exists push_subscriptions (
+    id         uuid primary key default gen_random_uuid(),
+    user_id    uuid not null references users(id) on delete cascade,
+    endpoint   text not null unique,
+    p256dh     text not null,
+    auth       text not null,
+    user_agent text,
+    created_at timestamptz not null default now()
+  )`,
+  `create index if not exists idx_push_subscriptions_user on push_subscriptions (user_id)`,
 ]
 
 for (const stmt of STATEMENTS) {

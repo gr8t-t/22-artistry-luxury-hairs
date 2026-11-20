@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { StoreProvider } from './context/StoreContext'
 import { AuthProvider } from './context/AuthContext'
+import { NotificationsProvider } from './context/NotificationsContext'
 import Account from './pages/Account'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -42,6 +43,7 @@ function Layout({ children }) {
 export default function App() {
   return (
     <AuthProvider>
+    <NotificationsProvider>
     <StoreProvider>
       <BrowserRouter>
         <Layout>
@@ -58,6 +60,7 @@ export default function App() {
         </Layout>
       </BrowserRouter>
     </StoreProvider>
+    </NotificationsProvider>
     </AuthProvider>
   )
 }

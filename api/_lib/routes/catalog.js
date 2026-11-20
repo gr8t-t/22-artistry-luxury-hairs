@@ -2,6 +2,7 @@ import { sql, logActivity } from '../db.js'
 import { requireUser } from '../auth.js'
 import { send, body, text, whole, uuid, imageUrl, HttpError } from '../http.js'
 import { nairaToKobo, koboToNaira } from '../money.js'
+import { notifyAllCustomers } from '../notify.js'
 
 export const mapProduct = (p) => ({
   id: p.id, name: p.name, category: p.category, price: koboToNaira(p.price_kobo),
@@ -113,6 +114,7 @@ export async function createAnnouncement(req, res) {
   const rows = await sql`insert into announcements (title, message, image_url, expires_at)
     values (${a.title}, ${a.message}, ${a.image}, ${expires.toISOString()}) returning *`
   await logActivity(u.id, 'announcement.created', 'announcement', rows[0].id, { title: a.title })
+  await notifyAllCustomers({ type: 'offer', title: a.title || 'New announcement from 22 Artistry', body: a.message.slice(0, 140), url: '/announcements' })
   send(res, 201, { announcement: mapAnnouncement(rows[0]) })
 }
 

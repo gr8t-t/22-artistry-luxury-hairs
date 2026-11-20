@@ -1,11 +1,13 @@
 import { sql, logActivity } from '../db.js'
 import { requireUser } from '../auth.js'
 import { send, body, text, uuid, normalizePhone, HttpError } from '../http.js'
-import { nairaToKobo, koboToNaira, MAX_PAYMENT_KOBO } from '../money.js'
+import { nairaToKobo, koboToNaira, formatNaira, MAX_PAYMENT_KOBO } from '../money.js'
+import { notifyUser } from '../notify.js'
 
 // Wallet top-ups and FlexPay instalments are added in later steps (they need balances to credit).
 const PURPOSES = ['service', 'product', 'booking_deposit', 'other']
 const METHODS = ['cash', 'pos', 'transfer']
+const PURPOSE_TEXT = { service: 'service', product: 'product purchase', booking_deposit: 'booking deposit', other: 'payment' }
 
 export const mapPayment = (p) => ({
   id: p.id,
@@ -101,7 +103,14 @@ export async function recordPayment(req, res) {
 
   await logActivity(staff.id, 'payment.recorded', 'payment', inserted[0].id,
     { amountKobo: kobo, method: b.method, purpose: b.purpose, customerId: customer?.id ?? null })
-  send(res, 201, { payment: await getPayment(inserted[0].id) })
+  const payment = await getPayment(inserted[0].id)
+  if (customer?.id) {
+    await notifyUser(customer.id, {
+      type: 'payment', title: 'Payment received',
+      body: `${formatNaira(payment.amount)} received (${PURPOSE_TEXT[b.purpose]}). Receipt ${payment.receiptNo}.`, url: '/account',
+    })
+  }
+  send(res, 201, { payment })
 }
 
 export async function listPayments(req, res) {
@@ -127,7 +136,14 @@ export async function reversePayment(req, res) {
     where id = ${id} and status = 'confirmed' returning id`
   if (!rows.length) throw new HttpError(409, 'This payment was not found or is already reversed')
   await logActivity(manager.id, 'payment.reversed', 'payment', id, { reason })
-  send(res, 200, { payment: await getPayment(id) })
+  const payment = await getPayment(id)
+  if (payment.customerId) {
+    await notifyUser(payment.customerId, {
+      type: 'payment', title: 'Payment reversed',
+      body: `${formatNaira(payment.amount)} (${payment.receiptNo}) was reversed. Reason: ${reason}`, url: '/account',
+    })
+  }
+  send(res, 200, { payment })
 }
 
 export async function myPayments(req, res) {

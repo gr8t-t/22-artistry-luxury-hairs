@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { naira, dateTime, PURPOSE_LABEL } from '../lib/format'
 import Receipt from '../components/Receipt'
+import { PushControls, InstallControls } from '../components/NotificationBell'
 
 function Field({ label, children }) {
   return (
@@ -236,6 +237,19 @@ function Profile() {
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="glass-card rounded-2xl p-6 mt-4 space-y-5">
+        <div>
+          <p className="text-white font-semibold text-sm font-poppins mb-1">Phone notifications</p>
+          <p className="body-copy text-xs mb-3">Get an alert for bookings, payments and offers, even when the app is closed.</p>
+          <PushControls />
+        </div>
+        <div className="border-t border-white/10 pt-5">
+          <p className="text-white font-semibold text-sm font-poppins mb-1">Get the app</p>
+          <p className="body-copy text-xs mb-3">Add 22 Artistry to your phone for one-tap booking, like any other app.</p>
+          <InstallControls />
+        </div>
       </div>
 
       {receipt && <Receipt payment={receipt} onClose={() => setReceipt(null)} />}
