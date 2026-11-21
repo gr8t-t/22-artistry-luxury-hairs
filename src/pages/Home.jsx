@@ -61,7 +61,7 @@ export default function Home() {
         />
         <div className="absolute inset-0 md:hidden"
           style={{
-            background: 'linear-gradient(90deg, rgba(8,0,5,0.86) 0%, rgba(8,0,5,0.55) 36%, rgba(8,0,5,0.04) 56%, rgba(8,0,5,0) 100%), linear-gradient(to top, rgba(8,0,5,0.97) 0%, rgba(8,0,5,0.84) 32%, rgba(8,0,5,0.4) 46%, rgba(8,0,5,0) 58%), linear-gradient(to bottom, rgba(8,0,5,0.55) 0%, rgba(8,0,5,0) 14%)'
+            background: 'linear-gradient(90deg, rgba(8,0,5,0.86) 0%, rgba(8,0,5,0.55) 36%, rgba(8,0,5,0.04) 56%, rgba(8,0,5,0) 100%), linear-gradient(to top, rgba(8,0,5,0.97) 0%, rgba(8,0,5,0.84) 32%, rgba(8,0,5,0.4) 46%, rgba(8,0,5,0) 58%), linear-gradient(to bottom, rgba(8,0,5,0.95) 0%, rgba(8,0,5,0.72) 9%, rgba(8,0,5,0.28) 20%, rgba(8,0,5,0) 30%)'
           }}
         />
         {/* Bottom fade */}
@@ -80,7 +80,7 @@ export default function Home() {
         />
 
         {/* Content */}
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-start md:justify-center pt-28 md:pt-32 pb-28 md:pb-20 min-h-screen">
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-start md:justify-center pt-24 md:pt-32 pb-24 md:pb-20 min-h-screen">
           <div className="max-w-[600px] flex flex-col flex-1 md:block">
 
             {/* Top tag */}
@@ -102,15 +102,18 @@ export default function Home() {
               Our Artistry.
             </h1>
 
+            {/* Glass panel on phones: one tidy block for the paragraph, buttons and rating */}
+            <div className="hero-panel mt-auto md:mt-0">
+
             {/* Rule */}
             <div
-              className="my-7 mt-auto md:mt-7 h-px bg-gradient-to-r from-brand-pink/60 to-transparent w-0 opacity-0"
+              className="hidden md:block my-7 h-px bg-gradient-to-r from-brand-pink/60 to-transparent w-0 opacity-0"
               style={{ animation: 'fadeUp .6s .6s ease forwards, lineGrow 1s .8s ease forwards' }}
             />
 
             {/* Tagline */}
             <p
-              className="body-copy max-w-[17rem] md:max-w-sm opacity-0 translate-y-6"
+              className="body-copy text-[13px] md:text-[0.9rem] leading-relaxed md:max-w-sm opacity-0 translate-y-6"
               style={{ animation: 'fadeUp .8s .5s cubic-bezier(.16,1,.3,1) forwards' }}
             >
               Experience luxury hair installations, professional colour treatments,
@@ -119,7 +122,7 @@ export default function Home() {
 
             {/* CTAs */}
             <div
-              className="flex flex-wrap gap-2.5 md:gap-3 mt-6 md:mt-9 opacity-0 translate-y-6"
+              className="flex flex-wrap gap-2.5 md:gap-3 mt-4 md:mt-9 opacity-0 translate-y-6"
               style={{ animation: 'fadeUp .8s .65s cubic-bezier(.16,1,.3,1) forwards' }}
             >
               <Link to="/booking" className="btn-primary animate-pulse-pink px-4 md:px-7 text-[13px] md:text-sm">
@@ -132,13 +135,15 @@ export default function Home() {
 
             {/* Rating */}
             <div
-              className="flex items-center gap-3 mt-6 md:mt-10 opacity-0"
+              className="flex items-center gap-3 mt-4 md:mt-10 opacity-0"
               style={{ animation: 'fadeIn .8s .85s ease forwards' }}
             >
               <div className="flex gap-0.5">
                 {[1,2,3,4,5].map(i => <Star key={i} size={13} className="text-yellow-400 fill-yellow-400" />)}
               </div>
-              <span className="body-copy text-xs">Trusted by 500+ clients across Nigeria</span>
+              <span className="body-copy text-[11px] md:text-xs">Trusted by 500+ clients across Nigeria</span>
+            </div>
+
             </div>
           </div>
         </div>
