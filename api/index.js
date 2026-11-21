@@ -50,6 +50,8 @@ const ROUTES = [
   ['POST',   '/admin/announcements',     catalog.createAnnouncement],
   ['DELETE', '/admin/announcements/:id', catalog.deleteAnnouncement],
   ['POST',   '/admin/import',            catalog.importFromBrowser],
+  ['POST',   '/admin/video',             catalog.setShowcaseVideo],
+  ['DELETE', '/admin/video',             catalog.removeShowcaseVideo],
 ].map(([method, pattern, handler]) => {
   const names = []
   const regex = new RegExp('^' + pattern.replace(/:([a-z]+)/g, (_, n) => { names.push(n); return '([^/]+)' }) + '$')

@@ -422,3 +422,12 @@ button:disabled { cursor: not-allowed; }
   }
   body::before { display: none !important; }
 }
+
+/* ── Hero photo: on phones show her face (right side) at the top; text sits below ── */
+.hero-photo {
+  background-size: auto 72vh;
+  background-position: 100% 0;
+}
+@media (min-width: 768px) {
+  .hero-photo { background-size: cover; background-position: center; }
+}

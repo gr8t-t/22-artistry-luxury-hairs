@@ -25,3 +25,9 @@ dist-ssr
 
 .vercel
 .env*
+
+# local Claude skills (not part of the website)
+.claude/
+
+# advert video project (not part of the website)
+advert/

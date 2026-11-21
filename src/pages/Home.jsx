@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight, ArrowRight, Droplets, Layers, Eye, BookOpen, Gem, Sparkles, ShoppingBag, Star } from 'lucide-react'
 import InstagramIcon from '../components/InstagramIcon'
 import Reviews from '../components/Reviews'
+import ShowcaseVideo from '../components/ShowcaseVideo'
 import { useStore } from '../context/StoreContext'
 import { useEffect, useRef } from 'react'
 
@@ -12,13 +13,6 @@ const SERVICES = [
   { Icon: Gem,       title: 'Fixing of Nails',            desc: 'Refined nail designs and fixes for any occasion — elegant every time.' },
   { Icon: Eye,       title: 'Lashes Extension',           desc: 'Lash extensions that open and frame your eyes with stunning depth.' },
   { Icon: BookOpen,  title: 'General Training',           desc: 'Master the craft. Learn hair and beauty from our industry professionals.' },
-]
-
-const STATS = [
-  { value: '500+', label: 'Happy Clients' },
-  { value: '8',    label: 'Services Offered' },
-  { value: '5.0',  label: 'Average Rating' },
-  { value: '3+',   label: 'Years of Excellence' },
 ]
 
 function useReveal(ref) {
@@ -40,10 +34,8 @@ function useReveal(ref) {
 export default function Home() {
   const { products, gallery, addToCart } = useStore()
   const featured = products.filter(p => p.featured).slice(0, 3)
-  const statsRef    = useRef(null)
   const servicesRef = useRef(null)
   const productsRef = useRef(null)
-  useReveal(statsRef)
   useReveal(servicesRef)
   useReveal(productsRef)
 
@@ -57,14 +49,19 @@ export default function Home() {
 
         {/* Full-bleed background image */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="hero-photo absolute inset-0 bg-no-repeat"
           style={{ backgroundImage: `url('/front-pics.jpeg')` }}
         />
 
-        {/* Gradient layers */}
-        <div className="absolute inset-0"
+        {/* Gradient layers: sideways on desktop, top-to-bottom on phones so her face stays clear */}
+        <div className="absolute inset-0 hidden md:block"
           style={{
             background: 'linear-gradient(105deg, rgba(8,0,5,0.97) 0%, rgba(8,0,5,0.82) 45%, rgba(8,0,5,0.15) 100%)'
+          }}
+        />
+        <div className="absolute inset-0 md:hidden"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(8,0,5,0.6) 0, rgba(8,0,5,0) 12vh, rgba(8,0,5,0) 38vh, rgba(8,0,5,0.9) 58vh, #080005 67vh)'
           }}
         />
         {/* Bottom fade */}
@@ -83,12 +80,12 @@ export default function Home() {
         />
 
         {/* Content */}
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-center pt-32 pb-20 min-h-screen">
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-start md:justify-center pt-[58vh] md:pt-32 pb-16 md:pb-20 md:min-h-screen">
           <div className="max-w-[600px]">
 
             {/* Top tag */}
             <div
-              className="flex items-center gap-3 mb-10 opacity-0 translate-y-8"
+              className="flex items-center gap-3 mb-6 md:mb-10 opacity-0 translate-y-8"
               style={{ animation: 'fadeUp .8s .1s cubic-bezier(.16,1,.3,1) forwards' }}
             >
               <div className="w-8 h-px bg-brand-pink" />
@@ -155,31 +152,9 @@ export default function Home() {
 
 
       {/* ════════════════════════════════════════
-          STATS
+          OUR WORK — looping client video (hidden until uploaded)
       ════════════════════════════════════════ */}
-      <section ref={statsRef} className="border-y border-brand-border bg-brand-card">
-        <div className="max-w-6xl mx-auto px-5 md:px-10 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x md:divide-brand-border">
-            {STATS.map((s, i) => (
-              <div
-                key={s.label}
-                data-reveal
-                className="text-center"
-                style={{
-                  opacity: 0,
-                  transform: 'translateY(30px)',
-                  transition: `opacity .7s ${i * .1}s ease, transform .7s ${i * .1}s ease`,
-                }}
-              >
-                <p className="text-gradient" style={{ fontFamily: 'Montserrat', fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700 }}>
-                  {s.value}
-                </p>
-                <p className="body-copy text-xs mt-1">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ShowcaseVideo />
 
 
       {/* ════════════════════════════════════════

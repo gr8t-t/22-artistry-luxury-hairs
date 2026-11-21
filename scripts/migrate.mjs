@@ -145,6 +145,13 @@ const STATEMENTS = [
     created_at timestamptz not null default now()
   )`,
   `create index if not exists idx_push_subscriptions_user on push_subscriptions (user_id)`,
+
+  // ── Home-page showcase video (one edited video that loops; uploading a new one replaces it) ──
+  `create table if not exists showcase_videos (
+    id         uuid primary key default gen_random_uuid(),
+    url        text not null,
+    created_at timestamptz not null default now()
+  )`,
 ]
 
 for (const stmt of STATEMENTS) {

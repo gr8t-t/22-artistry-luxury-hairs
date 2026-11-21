@@ -19,6 +19,7 @@ export function StoreProvider({ children }) {
   const [gallery, setGallery] = useState([])
   const [announcements, setAnnouncements] = useState([])
   const [publicReviews, setPublicReviews] = useState([])
+  const [video, setVideo] = useState(null)
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [bookings, setBookings] = useState([])
   const [allReviews, setAllReviews] = useState(null) // manager only
@@ -34,6 +35,7 @@ export function StoreProvider({ children }) {
       setGallery(d.gallery)
       setAnnouncements(d.announcements)
       setPublicReviews(d.reviews)
+      setVideo(d.video || null)
     } catch (e) {
       console.error('Could not load catalogue', e)
     } finally {
@@ -131,6 +133,18 @@ export function StoreProvider({ children }) {
     return true
   })
 
+  // Home-page showcase video (one video, loops; uploading again replaces it)
+  const setShowcaseVideo = (url) => act(async () => {
+    const d = await api('/admin/video', { method: 'POST', body: { url } })
+    setVideo(d.video)
+    return d.video
+  })
+  const removeShowcaseVideo = () => act(async () => {
+    await api('/admin/video', { method: 'DELETE' })
+    setVideo(null)
+    return true
+  })
+
   // One-time: bring over anything the owner added in this browser before the database existed
   const getLegacyData = () => {
     try { if (localStorage.getItem(IMPORT_DONE_KEY)) return { products: [], gallery: [], announcements: [] } } catch { /* ignore */ }
@@ -183,6 +197,7 @@ export function StoreProvider({ children }) {
       bookings, addBooking, updateBookingStatus,
       reviews, addReview, approveReview, deleteReview,
       announcements, addAnnouncement, deleteAnnouncement,
+      video, setShowcaseVideo, removeShowcaseVideo,
       getLegacyData, importLegacyData,
       cart, cartOpen, setCartOpen, addToCart, removeFromCart,
       updateCartQty, clearCart, cartTotal, cartCount, checkoutViaWhatsApp,
