@@ -7,6 +7,7 @@ import * as catalog from './_lib/routes/catalog.js'
 import * as engage from './_lib/routes/engage.js'
 import * as payments from './_lib/routes/payments.js'
 import * as notifications from './_lib/routes/notifications.js'
+import * as rewards from './_lib/routes/rewards.js'
 
 const ROUTES = [
   // Accounts
@@ -24,6 +25,7 @@ const ROUTES = [
 
   // Any logged-in user
   ['GET',    '/me/payments',   payments.myPayments],
+  ['GET',    '/me/rewards',    rewards.myRewards],
   ['GET',    '/me/notifications',        notifications.listMine],
   ['POST',   '/me/notifications/read',   notifications.markRead],
   ['POST',   '/me/push/subscribe',       notifications.subscribe],
@@ -36,8 +38,13 @@ const ROUTES = [
   ['GET',    '/admin/customers/:q',      payments.searchCustomers],
   ['GET',    '/admin/payments',          payments.listPayments],
   ['POST',   '/admin/payments',          payments.recordPayment],
+  ['GET',    '/admin/rewards/customer/:id', rewards.customerRewards],
+  ['POST',   '/admin/rewards/redeem',    rewards.redeemTreatment],
 
   // Manager only
+  ['GET',    '/admin/rewards/overview',  rewards.rewardsOverview],
+  ['POST',   '/admin/rewards/settings',  rewards.setRewardsSettings],
+  ['POST',   '/admin/rewards/recalc/:id', rewards.recalcPayment],
   ['POST',   '/admin/payments/:id/reverse', payments.reversePayment],
   ['GET',    '/admin/reviews',           engage.listAllReviews],
   ['PATCH',  '/admin/reviews/:id',       engage.approveReview],

@@ -18,7 +18,7 @@ export const PURPOSE_LABEL = {
   flexpay_instalment: 'FlexPay instalment',
 }
 
-export const METHOD_LABEL = { cash: 'Cash', pos: 'POS (card)', transfer: 'Bank transfer' }
+export const METHOD_LABEL = { cash: 'Cash', pos: 'POS (card)', transfer: 'Bank transfer', wallet: 'Hair Wallet' }
 
 export const timeAgo = (iso) => {
   const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))

@@ -3,13 +3,14 @@ import { useStore } from '../context/StoreContext'
 import { useAuth } from '../context/AuthContext'
 import PaymentsPanel from '../components/admin/PaymentsPanel'
 import NotificationBell from '../components/NotificationBell'
+import RewardsPanel from '../components/admin/RewardsPanel'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
   Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone, Upload,
 } from 'lucide-react'
 
-const MANAGER_TABS = ['Payments', 'Bookings', 'Products', 'Gallery', 'Reviews', 'Announcements']
-const STAFF_TABS = ['Payments', 'Bookings']
+const MANAGER_TABS = ['Payments', 'Rewards', 'Bookings', 'Products', 'Gallery', 'Reviews', 'Announcements']
+const STAFF_TABS = ['Payments', 'Rewards', 'Bookings']
 const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 
 const BLANK_PRODUCT = { name: '', category: 'Hair', price: '', quantity: '', description: '', image: '', featured: false }
@@ -305,6 +306,9 @@ export default function Admin() {
 
         {/* ── PAYMENTS TAB ── */}
         {tab === 'Payments' && <PaymentsPanel isManager={isManager} />}
+
+        {/* ── REWARDS TAB ── */}
+        {tab === 'Rewards' && <RewardsPanel isManager={isManager} />}
 
         {/* ── PRODUCTS TAB ── */}
         {isManager && tab === 'Products' && (

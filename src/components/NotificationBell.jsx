@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { Bell, BellRing, BellOff, Banknote, CalendarCheck, Star, Megaphone, Download, Smartphone, Share } from 'lucide-react'
+import { Bell, BellRing, BellOff, Banknote, CalendarCheck, Star, Megaphone, Download, Smartphone, Share, Gift } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNotifications } from '../context/NotificationsContext'
 import { timeAgo } from '../lib/format'
 
-const ICONS = { payment: Banknote, booking: CalendarCheck, review: Star, offer: Megaphone, system: Bell }
+const ICONS = { payment: Banknote, booking: CalendarCheck, review: Star, offer: Megaphone, reward: Gift, system: Bell }
 
 /** Turn push notifications on/off for this device. */
 export function PushControls({ compact = false }) {

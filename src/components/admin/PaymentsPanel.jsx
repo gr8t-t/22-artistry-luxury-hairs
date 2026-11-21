@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, X, Receipt as ReceiptIcon, Banknote, CreditCard, Landmark, RotateCcw, UserRound } from 'lucide-react'
+import { Search, X, Receipt as ReceiptIcon, Banknote, CreditCard, Landmark, RotateCcw, UserRound, Wallet, Gift } from 'lucide-react'
 import { api } from '../../lib/api'
 import { naira, dateTime, PURPOSE_LABEL, METHOD_LABEL } from '../../lib/format'
 import Receipt from '../Receipt'
@@ -9,6 +9,7 @@ const METHODS = [
   { id: 'cash', label: 'Cash', Icon: Banknote },
   { id: 'pos', label: 'POS (card)', Icon: CreditCard },
   { id: 'transfer', label: 'Transfer', Icon: Landmark },
+  { id: 'wallet', label: 'Hair Wallet', Icon: Wallet },
 ]
 
 const newKey = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2))
@@ -34,6 +35,7 @@ export default function PaymentsPanel({ isManager }) {
   const [today, setToday] = useState({ total: 0, count: 0 })
   const [listError, setListError] = useState('')
   const [receipt, setReceipt] = useState(null)
+  const [rewardNote, setRewardNote] = useState('')
 
   const load = useCallback(async () => {
     try {
@@ -68,10 +70,11 @@ export default function PaymentsPanel({ isManager }) {
 
   const submit = async (e) => {
     e.preventDefault()
-    setError('')
+    setError(''); setRewardNote('')
     const value = Number(amount)
     if (!amount || !Number.isFinite(value) || value <= 0) return setError('Enter the amount received.')
     if (mode === 'registered' && !customer) return setError('Search and select the customer, or switch to Walk-in.')
+    if (method === 'wallet' && mode !== 'registered') return setError('Hair Wallet can only be used for a registered customer.')
     if (mode === 'walkin' && !walkName.trim()) return setError('Enter the customer\'s name.')
 
     const who = mode === 'registered' ? customer.name : walkName.trim()
@@ -90,6 +93,12 @@ export default function PaymentsPanel({ isManager }) {
         },
       })
       setReceipt(d.payment)
+      const r = d.rewards
+      const bits = []
+      if (r && r.points > 0) bits.push(`${r.points} loyalty point${r.points > 1 ? 's' : ''} earned (now ${r.totalPoints})`)
+      if (r && r.unlockedFreeTreatment) bits.push('a FREE hair treatment is now available to claim')
+      if (r && r.referralReward > 0) bits.push(`${naira(r.referralReward)} referral reward sent to the friend who invited them`)
+      setRewardNote(bits.length ? bits.join('. ') + '.' : '')
       reset()
       load()
     } catch (err) {
@@ -209,7 +218,7 @@ export default function PaymentsPanel({ isManager }) {
 
         <div>
           <label className={label}>How was it paid?</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {METHODS.map(({ id, label: t, Icon }) => (
               <button type="button" key={id} onClick={() => setMethod(id)}
                 className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-poppins transition-all ${
@@ -220,7 +229,7 @@ export default function PaymentsPanel({ isManager }) {
           </div>
         </div>
 
-        {method !== 'cash' && (
+        {method !== 'cash' && method !== 'wallet' && (
           <div>
             <label className={label}>{method === 'pos' ? 'POS receipt / RRN number' : 'Transfer reference'} (optional)</label>
             <input className="input-field" value={reference} onChange={e => setReference(e.target.value)} maxLength={80} />
@@ -228,6 +237,11 @@ export default function PaymentsPanel({ isManager }) {
         )}
 
         {error && <p className="text-red-400 text-sm" role="alert">{error}</p>}
+        {rewardNote && (
+          <p className="text-sm font-poppins text-green-200 rounded-xl px-4 py-3 flex gap-2" style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)' }} role="status">
+            <Gift size={16} className="shrink-0 mt-0.5" /> <span>Recorded. {rewardNote}</span>
+          </p>
+        )}
 
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-60">
           {busy ? 'Recording…' : 'Record payment & print receipt'}

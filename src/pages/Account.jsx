@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Eye, EyeOff, Copy, Check, LogOut, Phone, Mail, Gift, ReceiptText } from 'lucide-react'
+import { Eye, EyeOff, Copy, Check, LogOut, Phone, Mail, Gift, ReceiptText, Star, Wallet } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../lib/api'
 import { naira, dateTime, PURPOSE_LABEL } from '../lib/format'
@@ -153,11 +153,13 @@ function Profile() {
   const [copied, setCopied] = useState(false)
   const [payments, setPayments] = useState(null)
   const [receipt, setReceipt] = useState(null)
+  const [rw, setRw] = useState(null)
   const link = `${window.location.origin}/account?ref=${user.referralCode}`
 
   useEffect(() => {
     let cancelled = false
     api('/me/payments').then(d => { if (!cancelled) setPayments(d.payments) }).catch(() => { if (!cancelled) setPayments([]) })
+    api('/me/rewards').then(d => { if (!cancelled) setRw(d) }).catch(() => {})
     return () => { cancelled = true }
   }, [])
 
@@ -191,12 +193,56 @@ function Profile() {
         )}
       </div>
 
+      {rw && (
+        <div className="glass-card rounded-2xl p-6 mt-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Star size={16} className="text-brand-pink" />
+            <p className="text-white font-semibold text-sm font-poppins">My rewards</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p className="text-xs text-gray-300 font-poppins">Loyalty points</p>
+              <p className="text-white font-bold text-2xl mt-1">{rw.points}</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p className="text-xs text-gray-300 font-poppins flex items-center gap-1"><Wallet size={12} /> Hair Wallet</p>
+              <p className="text-white font-bold text-2xl mt-1">{naira(rw.wallet)}</p>
+            </div>
+          </div>
+          <div className="flex justify-between text-xs text-gray-300 font-poppins mb-1.5">
+            <span>Next free hair treatment</span>
+            <span>{rw.points % rw.pointsPerTreatment} / {rw.pointsPerTreatment}</span>
+          </div>
+          <div className="h-2 rounded-full bg-white/10 overflow-hidden mb-3">
+            <div className="h-full bg-brand-pink" style={{ width: `${((rw.points % rw.pointsPerTreatment) / rw.pointsPerTreatment) * 100}%` }} />
+          </div>
+          {rw.freeTreatments > 0 ? (
+            <p className="text-sm font-poppins text-green-200 rounded-xl px-4 py-3" style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)' }}>
+              You have {rw.freeTreatments} free hair treatment{rw.freeTreatments > 1 ? 's' : ''} waiting. Visit the salon to claim {rw.freeTreatments > 1 ? 'them' : 'it'}.
+            </p>
+          ) : (
+            <p className="body-copy text-xs">{rw.pointsToNext} more point{rw.pointsToNext === 1 ? '' : 's'} to a free hair treatment. Earn 1 point every visit, 5 for a visit over ₦100,000 and 10 over ₦1,000,000.</p>
+          )}
+          {rw.activity.length > 0 && (
+            <ul className="divide-y divide-white/10 mt-4 text-sm font-poppins">
+              {rw.activity.slice(0, 5).map((a, i) => (
+                <li key={i} className="flex justify-between gap-3 py-2">
+                  <span className="text-gray-200 truncate">{{ visit: 'Visit points', redeem: 'Free hair treatment used', adjust: 'Adjustment', referral_reward: 'Referral reward', referral_reversal: 'Referral reward reversed', wallet_spend: 'Paid with Hair Wallet', wallet_refund: 'Hair Wallet refund', adjustment: 'Adjustment' }[a.type] || a.type}</span>
+                  <span className={`shrink-0 font-semibold ${a.amount < 0 ? 'text-red-300' : 'text-green-300'}`}>{a.kind === 'points' ? `${a.amount > 0 ? '+' : ''}${a.amount} pts` : `${a.amount > 0 ? '+' : ''}${naira(a.amount)}`}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       <div className="glass-card rounded-2xl p-6 mt-4">
         <div className="flex items-center gap-2 mb-1">
           <Gift size={16} className="text-brand-pink" />
           <p className="text-white font-semibold text-sm font-poppins">Your referral code</p>
         </div>
-        <p className="body-copy text-xs mb-4">Invite friends with your code. You earn a reward every time they pay.</p>
+        <p className="body-copy text-xs mb-4">Invite friends with your code. You earn {rw ? rw.referral.ratePercent : 4}% of every payment they make, added to your Hair Wallet.</p>
+        {rw && rw.referral.friends > 0 && <p className="text-xs text-gray-300 font-poppins mb-3">{rw.referral.friends} friend{rw.referral.friends > 1 ? 's' : ''} joined · {naira(rw.referral.earned)} earned</p>}
         <div className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 border border-brand-border bg-brand-card">
           <span className="font-mono tracking-widest text-white">{user.referralCode}</span>
           <button onClick={copy} className="text-brand-pink text-xs font-poppins flex items-center gap-1.5">

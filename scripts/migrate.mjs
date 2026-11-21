@@ -145,6 +145,52 @@ const STATEMENTS = [
     created_at timestamptz not null default now()
   )`,
   `create index if not exists idx_push_subscriptions_user on push_subscriptions (user_id)`,
+
+  // ── Step 4: loyalty points, referral rewards, Hair Wallet ledger ──
+  `alter table payments drop constraint if exists payments_method_check`,
+  `alter table payments add constraint payments_method_check check (method in ('cash','pos','transfer','wallet'))`,
+  `create table if not exists settings (
+    key        text primary key,
+    value      text not null,
+    updated_by uuid references users(id),
+    updated_at timestamptz not null default now()
+  )`,
+  `create table if not exists points_ledger (
+    id         uuid primary key default gen_random_uuid(),
+    user_id    uuid not null references users(id),
+    points     integer not null,
+    reason     text not null check (reason in ('visit','redeem','adjust')),
+    day        date,
+    payment_id uuid references payments(id),
+    note       text not null default '',
+    created_by uuid references users(id),
+    created_at timestamptz not null default now()
+  )`,
+  `create index if not exists idx_points_user on points_ledger (user_id, created_at desc)`,
+  `create index if not exists idx_points_visit_day on points_ledger (user_id, day) where reason = 'visit'`,
+  `create table if not exists treatment_redemptions (
+    id              uuid primary key default gen_random_uuid(),
+    user_id         uuid not null references users(id),
+    points_spent    integer not null,
+    note            text not null default '',
+    staff_id        uuid not null references users(id),
+    idempotency_key text unique,
+    created_at      timestamptz not null default now()
+  )`,
+  `create table if not exists wallet_ledger (
+    id             uuid primary key default gen_random_uuid(),
+    user_id        uuid not null references users(id),
+    amount_kobo    bigint not null,
+    type           text not null check (type in ('referral_reward','referral_reversal','wallet_spend','wallet_refund','adjustment')),
+    payment_id     uuid references payments(id),
+    source_user_id uuid references users(id),
+    rate_bps       integer,
+    note           text not null default '',
+    created_by     uuid references users(id),
+    created_at     timestamptz not null default now()
+  )`,
+  `create index if not exists idx_wallet_user on wallet_ledger (user_id, created_at desc)`,
+  `create unique index if not exists uq_wallet_payment_type on wallet_ledger (payment_id, type) where payment_id is not null`,
 ]
 
 for (const stmt of STATEMENTS) {

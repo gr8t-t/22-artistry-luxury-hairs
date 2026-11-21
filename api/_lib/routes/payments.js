@@ -1,12 +1,14 @@
+import crypto from 'node:crypto'
 import { sql, logActivity } from '../db.js'
 import { requireUser } from '../auth.js'
 import { send, body, text, uuid, normalizePhone, HttpError } from '../http.js'
 import { nairaToKobo, koboToNaira, formatNaira, MAX_PAYMENT_KOBO } from '../money.js'
 import { notifyUser } from '../notify.js'
+import { applyRewardsForPayment, undoRewardsForPayment } from '../rewards.js'
 
 // Wallet top-ups and FlexPay instalments are added in later steps (they need balances to credit).
 const PURPOSES = ['service', 'product', 'booking_deposit', 'other']
-const METHODS = ['cash', 'pos', 'transfer']
+const METHODS = ['cash', 'pos', 'transfer', 'wallet']
 const PURPOSE_TEXT = { service: 'service', product: 'product purchase', booking_deposit: 'booking deposit', other: 'payment' }
 
 export const mapPayment = (p) => ({
@@ -56,7 +58,7 @@ export async function recordPayment(req, res) {
   if (!kobo || kobo < 100) throw new HttpError(400, 'Enter a valid amount (at least ₦1)')
   if (kobo > MAX_PAYMENT_KOBO) throw new HttpError(400, 'That amount is above the single-entry limit. Please check it.')
   if (!PURPOSES.includes(b.purpose)) throw new HttpError(400, 'Choose what the payment is for')
-  if (!METHODS.includes(b.method)) throw new HttpError(400, 'Choose cash, POS or transfer')
+  if (!METHODS.includes(b.method)) throw new HttpError(400, 'Choose cash, POS, transfer or Hair Wallet')
   const key = text(b.idempotencyKey, 'Request id', { required: true, max: 80 })
   const description = text(b.description, 'Description', { max: 300 })
   const reference = text(b.reference, 'Reference', { max: 80 })
@@ -87,14 +89,40 @@ export async function recordPayment(req, res) {
   }
 
   // The unique idempotency key means a double-tap or retry can never record the money twice.
-  const inserted = await sql`
-    insert into payments (receipt_no, idempotency_key, customer_id, customer_name, customer_phone, purpose,
-                          description, amount_kobo, method, reference, booking_id, recorded_by)
-    values ('RC-' || to_char(now(), 'YYMM') || '-' || lpad(nextval('receipt_seq')::text, 5, '0'),
-            ${key}, ${customer?.id ?? null}, ${name}, ${phone}, ${b.purpose},
-            ${description}, ${kobo}, ${b.method}, ${reference}, ${bookingId}, ${staff.id})
-    on conflict (idempotency_key) do nothing
-    returning id`
+  let inserted
+  if (b.method === 'wallet') {
+    // Paying from the Hair Wallet: the balance check, the payment and the debit happen together, or not at all.
+    if (!customer) throw new HttpError(400, 'Hair Wallet can only be used by a registered customer')
+    const id = crypto.randomUUID()
+    const result = await sql.transaction([
+      sql`select pg_advisory_xact_lock(hashtext(${'wallet:' + customer.id}))`,
+      sql`insert into payments (id, receipt_no, idempotency_key, customer_id, customer_name, customer_phone, purpose,
+                                description, amount_kobo, method, reference, booking_id, recorded_by)
+          select ${id}::uuid, 'RC-' || to_char(now(), 'YYMM') || '-' || lpad(nextval('receipt_seq')::text, 5, '0'),
+                 ${key}::text, ${customer.id}::uuid, ${name}::text, ${phone}::text, ${b.purpose}::text,
+                 ${description}::text, ${kobo}::bigint, 'wallet', ${reference}::text, ${bookingId}::uuid, ${staff.id}::uuid
+          where (select coalesce(sum(amount_kobo), 0) from wallet_ledger where user_id = ${customer.id}::uuid) >= ${kobo}::bigint
+          on conflict (idempotency_key) do nothing
+          returning id`,
+      sql`insert into wallet_ledger (user_id, amount_kobo, type, payment_id, note, created_by)
+          select ${customer.id}::uuid, ${-kobo}::bigint, 'wallet_spend', ${id}::uuid, 'Paid at the salon', ${staff.id}::uuid
+          where exists (select 1 from payments where id = ${id}::uuid)`,
+    ])
+    inserted = result[1]
+    if (!inserted.length) {
+      const dup = await sql`select id from payments where idempotency_key = ${key}`
+      if (!dup.length) throw new HttpError(400, `${String(customer.name).split(' ')[0]} does not have enough Hair Wallet balance for this payment.`)
+    }
+  } else {
+    inserted = await sql`
+      insert into payments (receipt_no, idempotency_key, customer_id, customer_name, customer_phone, purpose,
+                            description, amount_kobo, method, reference, booking_id, recorded_by)
+      values ('RC-' || to_char(now(), 'YYMM') || '-' || lpad(nextval('receipt_seq')::text, 5, '0'),
+              ${key}, ${customer?.id ?? null}, ${name}, ${phone}, ${b.purpose},
+              ${description}, ${kobo}, ${b.method}, ${reference}, ${bookingId}, ${staff.id})
+      on conflict (idempotency_key) do nothing
+      returning id`
+  }
 
   if (!inserted.length) {
     const existing = await sql`select id from payments where idempotency_key = ${key}`
@@ -107,10 +135,12 @@ export async function recordPayment(req, res) {
   if (customer?.id) {
     await notifyUser(customer.id, {
       type: 'payment', title: 'Payment received',
-      body: `${formatNaira(payment.amount)} received (${PURPOSE_TEXT[b.purpose]}). Receipt ${payment.receiptNo}.`, url: '/account',
+      body: `${formatNaira(payment.amount)} ${b.method === 'wallet' ? 'paid from your Hair Wallet' : 'received'} (${PURPOSE_TEXT[b.purpose]}). Receipt ${payment.receiptNo}.`, url: '/account',
     })
   }
-  send(res, 201, { payment })
+  // Loyalty points + referral reward (safe to repeat, never throws)
+  const rewards = customer?.id ? await applyRewardsForPayment(inserted[0].id, staff.id) : null
+  send(res, 201, { payment, rewards: rewards && { ...rewards, referralReward: rewards.referralRewardKobo / 100 } })
 }
 
 export async function listPayments(req, res) {
@@ -136,6 +166,7 @@ export async function reversePayment(req, res) {
     where id = ${id} and status = 'confirmed' returning id`
   if (!rows.length) throw new HttpError(409, 'This payment was not found or is already reversed')
   await logActivity(manager.id, 'payment.reversed', 'payment', id, { reason })
+  await undoRewardsForPayment(id)
   const payment = await getPayment(id)
   if (payment.customerId) {
     await notifyUser(payment.customerId, {
