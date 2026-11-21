@@ -53,7 +53,7 @@ export default function Home() {
           style={{ backgroundImage: `url('/front-pics.jpeg')` }}
         />
 
-        {/* Gradient layers: sideways on desktop, top-to-bottom on phones so her face stays clear */}
+        {/* Gradient layers: on phones it darkens only the left (text) and the bottom, so her face on the right stays clear */}
         <div className="absolute inset-0 hidden md:block"
           style={{
             background: 'linear-gradient(105deg, rgba(8,0,5,0.97) 0%, rgba(8,0,5,0.82) 45%, rgba(8,0,5,0.15) 100%)'
@@ -61,7 +61,7 @@ export default function Home() {
         />
         <div className="absolute inset-0 md:hidden"
           style={{
-            background: 'linear-gradient(to bottom, rgba(8,0,5,0.6) 0, rgba(8,0,5,0) 12vh, rgba(8,0,5,0) 38vh, rgba(8,0,5,0.9) 58vh, #080005 67vh)'
+            background: 'linear-gradient(90deg, rgba(8,0,5,0.86) 0%, rgba(8,0,5,0.55) 36%, rgba(8,0,5,0.04) 56%, rgba(8,0,5,0) 100%), linear-gradient(to top, rgba(8,0,5,0.97) 0%, rgba(8,0,5,0.84) 32%, rgba(8,0,5,0.4) 46%, rgba(8,0,5,0) 58%), linear-gradient(to bottom, rgba(8,0,5,0.55) 0%, rgba(8,0,5,0) 14%)'
           }}
         />
         {/* Bottom fade */}
@@ -80,8 +80,8 @@ export default function Home() {
         />
 
         {/* Content */}
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-start md:justify-center pt-[58vh] md:pt-32 pb-16 md:pb-20 md:min-h-screen">
-          <div className="max-w-[600px]">
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-start md:justify-center pt-28 md:pt-32 pb-28 md:pb-20 min-h-screen">
+          <div className="max-w-[600px] flex flex-col flex-1 md:block">
 
             {/* Top tag */}
             <div
@@ -94,7 +94,7 @@ export default function Home() {
 
             {/* Headline */}
             <h1
-              className="display-xl opacity-0 translate-y-8"
+              className="display-xl hero-title opacity-0 translate-y-8"
               style={{ animation: 'fadeUp .9s .25s cubic-bezier(.16,1,.3,1) forwards' }}
             >
               Your<br />
@@ -104,13 +104,13 @@ export default function Home() {
 
             {/* Rule */}
             <div
-              className="my-7 h-px bg-gradient-to-r from-brand-pink/60 to-transparent w-0 opacity-0"
+              className="my-7 mt-auto md:mt-7 h-px bg-gradient-to-r from-brand-pink/60 to-transparent w-0 opacity-0"
               style={{ animation: 'fadeUp .6s .6s ease forwards, lineGrow 1s .8s ease forwards' }}
             />
 
             {/* Tagline */}
             <p
-              className="body-copy max-w-sm opacity-0 translate-y-6"
+              className="body-copy max-w-[17rem] md:max-w-sm opacity-0 translate-y-6"
               style={{ animation: 'fadeUp .8s .5s cubic-bezier(.16,1,.3,1) forwards' }}
             >
               Experience luxury hair installations, professional colour treatments,
@@ -119,20 +119,20 @@ export default function Home() {
 
             {/* CTAs */}
             <div
-              className="flex flex-wrap gap-3 mt-9 opacity-0 translate-y-6"
+              className="flex flex-wrap gap-2.5 md:gap-3 mt-6 md:mt-9 opacity-0 translate-y-6"
               style={{ animation: 'fadeUp .8s .65s cubic-bezier(.16,1,.3,1) forwards' }}
             >
-              <Link to="/booking" className="btn-primary animate-pulse-pink">
+              <Link to="/booking" className="btn-primary animate-pulse-pink px-4 md:px-7 text-[13px] md:text-sm">
                 Book Appointment <ArrowRight size={15} />
               </Link>
-              <Link to="/shop" className="btn-outline">
+              <Link to="/shop" className="btn-outline px-4 md:px-7 text-[13px] md:text-sm">
                 Shop Hair
               </Link>
             </div>
 
             {/* Rating */}
             <div
-              className="flex items-center gap-3 mt-10 opacity-0"
+              className="flex items-center gap-3 mt-6 md:mt-10 opacity-0"
               style={{ animation: 'fadeIn .8s .85s ease forwards' }}
             >
               <div className="flex gap-0.5">

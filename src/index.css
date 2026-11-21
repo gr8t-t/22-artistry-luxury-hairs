@@ -423,11 +423,15 @@ button:disabled { cursor: not-allowed; }
   body::before { display: none !important; }
 }
 
-/* ── Hero photo: on phones show her face (right side) at the top; text sits below ── */
+/* ── Hero photo: full-screen behind the text. On phones it is shifted sideways so her face
+      sits on the right, clear of the headline. ── */
 .hero-photo {
-  background-size: auto 72vh;
-  background-position: 100% 0;
+  background-size: cover;
+  background-position: 86% 50%;
 }
 @media (min-width: 768px) {
-  .hero-photo { background-size: cover; background-position: center; }
+  .hero-photo { background-position: center; }
+}
+@media (max-width: 767px) {
+  .hero-title { font-size: clamp(2.5rem, 12.5vw, 3.1rem); }
 }
