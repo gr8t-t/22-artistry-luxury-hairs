@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { ChevronRight, ArrowRight, Droplets, Layers, Eye, BookOpen, Gem, Sparkles, ShoppingBag, Star } from 'lucide-react'
 import InstagramIcon from '../components/InstagramIcon'
 import Reviews from '../components/Reviews'
-import ShowcaseVideo from '../components/ShowcaseVideo'
 import { useStore } from '../context/StoreContext'
 import { useEffect, useRef } from 'react'
 
@@ -13,6 +12,13 @@ const SERVICES = [
   { Icon: Gem,       title: 'Fixing of Nails',            desc: 'Refined nail designs and fixes for any occasion — elegant every time.' },
   { Icon: Eye,       title: 'Lashes Extension',           desc: 'Lash extensions that open and frame your eyes with stunning depth.' },
   { Icon: BookOpen,  title: 'General Training',           desc: 'Master the craft. Learn hair and beauty from our industry professionals.' },
+]
+
+const STATS = [
+  { value: '500+', label: 'Happy Clients' },
+  { value: '8',    label: 'Services Offered' },
+  { value: '5.0',  label: 'Average Rating' },
+  { value: '3+',   label: 'Years of Excellence' },
 ]
 
 function useReveal(ref) {
@@ -34,8 +40,10 @@ function useReveal(ref) {
 export default function Home() {
   const { products, gallery, addToCart } = useStore()
   const featured = products.filter(p => p.featured).slice(0, 3)
+  const statsRef    = useRef(null)
   const servicesRef = useRef(null)
   const productsRef = useRef(null)
+  useReveal(statsRef)
   useReveal(servicesRef)
   useReveal(productsRef)
 
@@ -49,19 +57,14 @@ export default function Home() {
 
         {/* Full-bleed background image */}
         <div
-          className="hero-photo absolute inset-0 bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url('/front-pics.jpeg')` }}
         />
 
-        {/* Gradient layers: on phones it darkens only the left (text) and the bottom, so her face on the right stays clear */}
-        <div className="absolute inset-0 hidden md:block"
+        {/* Gradient layers */}
+        <div className="absolute inset-0"
           style={{
             background: 'linear-gradient(105deg, rgba(8,0,5,0.97) 0%, rgba(8,0,5,0.82) 45%, rgba(8,0,5,0.15) 100%)'
-          }}
-        />
-        <div className="absolute inset-0 md:hidden"
-          style={{
-            background: 'linear-gradient(90deg, rgba(8,0,5,0.86) 0%, rgba(8,0,5,0.55) 36%, rgba(8,0,5,0.04) 56%, rgba(8,0,5,0) 100%), linear-gradient(to top, rgba(8,0,5,0.97) 0%, rgba(8,0,5,0.84) 32%, rgba(8,0,5,0.4) 46%, rgba(8,0,5,0) 58%), linear-gradient(to bottom, rgba(8,0,5,0.95) 0%, rgba(8,0,5,0.72) 9%, rgba(8,0,5,0.28) 20%, rgba(8,0,5,0) 30%)'
           }}
         />
         {/* Bottom fade */}
@@ -80,12 +83,12 @@ export default function Home() {
         />
 
         {/* Content */}
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-start md:justify-center pt-24 md:pt-32 pb-24 md:pb-20 min-h-screen">
-          <div className="max-w-[600px] flex flex-col flex-1 md:block">
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-center pt-32 pb-20 min-h-screen">
+          <div className="max-w-[600px]">
 
             {/* Top tag */}
             <div
-              className="flex items-center gap-3 mb-6 md:mb-10 opacity-0 translate-y-8"
+              className="flex items-center gap-3 mb-10 opacity-0 translate-y-8"
               style={{ animation: 'fadeUp .8s .1s cubic-bezier(.16,1,.3,1) forwards' }}
             >
               <div className="w-8 h-px bg-brand-pink" />
@@ -94,7 +97,7 @@ export default function Home() {
 
             {/* Headline */}
             <h1
-              className="display-xl hero-title opacity-0 translate-y-8"
+              className="display-xl opacity-0 translate-y-8"
               style={{ animation: 'fadeUp .9s .25s cubic-bezier(.16,1,.3,1) forwards' }}
             >
               Your<br />
@@ -102,18 +105,15 @@ export default function Home() {
               Our Artistry.
             </h1>
 
-            {/* Glass panel on phones: one tidy block for the paragraph, buttons and rating */}
-            <div className="hero-panel mt-auto md:mt-0">
-
             {/* Rule */}
             <div
-              className="hidden md:block my-7 h-px bg-gradient-to-r from-brand-pink/60 to-transparent w-0 opacity-0"
+              className="my-7 h-px bg-gradient-to-r from-brand-pink/60 to-transparent w-0 opacity-0"
               style={{ animation: 'fadeUp .6s .6s ease forwards, lineGrow 1s .8s ease forwards' }}
             />
 
             {/* Tagline */}
             <p
-              className="body-copy text-[13px] md:text-[0.9rem] leading-relaxed md:max-w-sm opacity-0 translate-y-6"
+              className="body-copy max-w-sm opacity-0 translate-y-6"
               style={{ animation: 'fadeUp .8s .5s cubic-bezier(.16,1,.3,1) forwards' }}
             >
               Experience luxury hair installations, professional colour treatments,
@@ -122,28 +122,26 @@ export default function Home() {
 
             {/* CTAs */}
             <div
-              className="flex flex-wrap gap-2.5 md:gap-3 mt-4 md:mt-9 opacity-0 translate-y-6"
+              className="flex flex-wrap gap-3 mt-9 opacity-0 translate-y-6"
               style={{ animation: 'fadeUp .8s .65s cubic-bezier(.16,1,.3,1) forwards' }}
             >
-              <Link to="/booking" className="btn-primary animate-pulse-pink px-4 md:px-7 text-[13px] md:text-sm">
+              <Link to="/booking" className="btn-primary animate-pulse-pink">
                 Book Appointment <ArrowRight size={15} />
               </Link>
-              <Link to="/shop" className="btn-outline px-4 md:px-7 text-[13px] md:text-sm">
+              <Link to="/shop" className="btn-outline">
                 Shop Hair
               </Link>
             </div>
 
             {/* Rating */}
             <div
-              className="flex items-center gap-3 mt-4 md:mt-10 opacity-0"
+              className="flex items-center gap-3 mt-10 opacity-0"
               style={{ animation: 'fadeIn .8s .85s ease forwards' }}
             >
               <div className="flex gap-0.5">
                 {[1,2,3,4,5].map(i => <Star key={i} size={13} className="text-yellow-400 fill-yellow-400" />)}
               </div>
-              <span className="body-copy text-[11px] md:text-xs">Trusted by 500+ clients across Nigeria</span>
-            </div>
-
+              <span className="body-copy text-xs">Trusted by 500+ clients across Nigeria</span>
             </div>
           </div>
         </div>
@@ -157,9 +155,31 @@ export default function Home() {
 
 
       {/* ════════════════════════════════════════
-          OUR WORK — looping client video (hidden until uploaded)
+          STATS
       ════════════════════════════════════════ */}
-      <ShowcaseVideo />
+      <section ref={statsRef} className="border-y border-brand-border bg-brand-card">
+        <div className="max-w-6xl mx-auto px-5 md:px-10 py-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x md:divide-brand-border">
+            {STATS.map((s, i) => (
+              <div
+                key={s.label}
+                data-reveal
+                className="text-center"
+                style={{
+                  opacity: 0,
+                  transform: 'translateY(30px)',
+                  transition: `opacity .7s ${i * .1}s ease, transform .7s ${i * .1}s ease`,
+                }}
+              >
+                <p className="text-gradient" style={{ fontFamily: 'Montserrat', fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700 }}>
+                  {s.value}
+                </p>
+                <p className="body-copy text-xs mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
 
       {/* ════════════════════════════════════════

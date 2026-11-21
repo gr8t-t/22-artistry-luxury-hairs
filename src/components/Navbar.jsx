@@ -51,7 +51,7 @@ export default function Navbar() {
     <>
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled ? 'nav-blur py-3' : 'bg-transparent max-md:bg-gradient-to-b max-md:from-[#080005]/90 max-md:via-[#080005]/55 max-md:to-transparent py-5'
+          scrolled ? 'nav-blur py-3' : 'bg-transparent py-5'
         }`}
       >
         <div className="max-w-6xl mx-auto px-5 md:px-10 flex items-center justify-between gap-4">
@@ -94,7 +94,7 @@ export default function Navbar() {
               href="https://wa.me/2349075341220"
               target="_blank"
               rel="noreferrer"
-              className="lg:hidden relative p-2 text-gray-200 hover:text-brand-pink transition-colors"
+              className="lg:hidden relative p-2 text-gray-400 hover:text-brand-pink transition-colors"
               aria-label="Chat on WhatsApp"
             >
               <MessageCircle size={20} />
@@ -102,14 +102,14 @@ export default function Navbar() {
             <NotificationBell />
             <Link
               to="/account"
-              className="relative p-2 text-gray-200 hover:text-brand-pink transition-colors"
+              className="relative p-2 text-gray-400 hover:text-brand-pink transition-colors"
               aria-label="My account"
             >
               <User size={20} />
             </Link>
             <button
               onClick={() => setCartOpen(true)}
-              className="relative p-2 text-gray-200 hover:text-brand-pink transition-colors"
+              className="relative p-2 text-gray-400 hover:text-brand-pink transition-colors"
               aria-label="Cart"
             >
               <ShoppingBag size={20} />

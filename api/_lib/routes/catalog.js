@@ -20,12 +20,11 @@ export const mapReview = (r) => ({
 
 /** Everything the public site needs, in one request. */
 export async function publicCatalog(req, res) {
-  const [products, gallery, announcements, reviews, videos] = await Promise.all([
+  const [products, gallery, announcements, reviews] = await Promise.all([
     sql`select * from products order by created_at asc`,
     sql`select * from gallery_images order by created_at asc`,
     sql`select * from announcements order by created_at desc limit 50`,
     sql`select * from reviews where approved = true order by created_at desc limit 100`,
-    sql`select * from showcase_videos order by created_at desc limit 1`,
   ])
   // Browsers always re-check; only Vercel's edge keeps a 10-second copy (never stale for longer).
   res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=10')
@@ -34,7 +33,6 @@ export async function publicCatalog(req, res) {
     gallery: gallery.map(mapGallery),
     announcements: announcements.map(mapAnnouncement),
     reviews: reviews.map(mapReview),
-    video: videos[0] ? { id: videos[0].id, url: videos[0].url } : null,
   }, 'no-cache')
 }
 
@@ -163,25 +161,4 @@ export async function importFromBrowser(req, res) {
   }
   await logActivity(u.id, 'data.imported_from_browser', 'import', null, counts)
   send(res, 200, { imported: counts })
-}
-
-/* ── Home-page showcase video ── */
-// Only videos hosted on our own Cloudinary account are accepted.
-const VIDEO_URL = /^https:\/\/res\.cloudinary\.com\/dlexy6j8w\/video\/upload\/[^\s"'<>]{5,1500}$/
-
-export async function setShowcaseVideo(req, res) {
-  const u = await requireUser(req, ['manager'])
-  const url = text(body(req).url, 'Video', { required: true, max: 2000 })
-  if (!VIDEO_URL.test(url)) throw new HttpError(400, 'That video link is not valid. Please upload the video again.')
-  await sql`delete from showcase_videos`
-  const rows = await sql`insert into showcase_videos (url) values (${url}) returning *`
-  await logActivity(u.id, 'video.set', 'video', rows[0].id)
-  send(res, 201, { video: { id: rows[0].id, url: rows[0].url } })
-}
-
-export async function removeShowcaseVideo(req, res) {
-  const u = await requireUser(req, ['manager'])
-  await sql`delete from showcase_videos`
-  await logActivity(u.id, 'video.removed', 'video', null)
-  send(res, 200, { ok: true })
 }

@@ -169,7 +169,7 @@ export default function NotificationBell() {
       <button
         ref={btnRef}
         onClick={toggle}
-        className="relative p-2 text-gray-200 hover:text-brand-pink transition-colors"
+        className="relative p-2 text-gray-400 hover:text-brand-pink transition-colors"
         aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
         aria-expanded={open}
       >
