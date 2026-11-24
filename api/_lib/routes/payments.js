@@ -260,7 +260,7 @@ export async function listPayments(req, res) {
   const rows = await sql`select p.*, r.name as recorder_name
     from payments p join users r on r.id = p.recorded_by
     order by p.created_at desc limit 100`
-  const today = await sql`select coalesce(sum(amount_kobo), 0) as total, count(*)::int as n from payments
+  const today = await sql`select coalesce(sum(amount_kobo) filter (where method <> 'wallet'), 0) as total, count(*)::int as n from payments
     where status = 'confirmed' and created_at >= date_trunc('day', now() at time zone 'Africa/Lagos') at time zone 'Africa/Lagos'`
   send(res, 200, {
     payments: rows.map(mapPayment),

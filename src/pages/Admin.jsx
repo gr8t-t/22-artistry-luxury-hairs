@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../context/StoreContext'
 import { useAuth } from '../context/AuthContext'
 import PaymentsPanel from '../components/admin/PaymentsPanel'
@@ -9,13 +9,14 @@ import FlexPayPanel from '../components/admin/FlexPayPanel'
 import OrdersPanel from '../components/admin/OrdersPanel'
 import ClientsPanel from '../components/admin/ClientsPanel'
 import TeamPanel from '../components/admin/TeamPanel'
+import ReportsPanel from '../components/admin/ReportsPanel'
 import ChangePasswordForm from '../components/ChangePasswordForm'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
   Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone, Upload,
 } from 'lucide-react'
 
-const MANAGER_TABS = ['Payments', 'Orders', 'Clients', 'FlexPay', 'Rewards', 'Wallet', 'Team', 'Bookings', 'Products', 'Gallery', 'Reviews', 'Announcements']
+const MANAGER_TABS = ['Reports', 'Payments', 'Orders', 'Clients', 'FlexPay', 'Rewards', 'Wallet', 'Team', 'Bookings', 'Products', 'Gallery', 'Reviews', 'Announcements']
 const STAFF_TABS = ['Payments', 'Orders', 'Clients', 'FlexPay', 'Rewards', 'Bookings']
 const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 
@@ -116,9 +117,12 @@ export default function Admin() {
   const [tab, setTab] = useState('Payments')
   // jump from a client's page to Payments / FlexPay with that client already chosen
   const [preset, setPreset] = useState(null)
-  const goTo = (t, client) => { setPreset(client); setTab(t) }
+  const touchedTab = useRef(false)
+  const goTo = (t, client) => { touchedTab.current = true; setPreset(client); setTab(t) }
   const isManager = user?.role === 'manager'
   const tabs = isManager ? MANAGER_TABS : STAFF_TABS
+  // the manager lands on the overview, staff on Payments
+  useEffect(() => { if (isManager && !touchedTab.current) setTab('Reports') }, [isManager])
 
   const {
     products, addProduct, updateProduct, deleteProduct,
@@ -328,6 +332,9 @@ export default function Admin() {
 
         {/* ── PAYMENTS TAB ── */}
         {tab === 'Payments' && <PaymentsPanel isManager={isManager} presetClient={preset} />}
+
+        {/* ── REPORTS TAB (manager) ── */}
+        {tab === 'Reports' && isManager && <ReportsPanel onGo={goTo} />}
 
         {/* ── ORDERS TAB ── */}
         {tab === 'Orders' && <OrdersPanel />}

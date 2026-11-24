@@ -14,6 +14,7 @@ import * as cart from './_lib/routes/cart.js'
 import * as orders from './_lib/routes/orders.js'
 import * as clients from './_lib/routes/clients.js'
 import * as team from './_lib/routes/team.js'
+import * as reports from './_lib/routes/reports.js'
 
 const ROUTES = [
   // Accounts
@@ -52,6 +53,7 @@ const ROUTES = [
   ['POST',   '/admin/orders/:id/ready', orders.readyOrder],
   ['POST',   '/admin/orders/:id/complete', orders.completeOrder],
   ['POST',   '/admin/orders/:id/cancel', orders.cancelOrder],
+  ['GET',    '/admin/reports', reports.reports],
   ['GET',    '/admin/team', team.listTeam],
   ['POST',   '/admin/team', team.createStaff],
   ['PATCH',  '/admin/team/:id', team.updateStaff],
