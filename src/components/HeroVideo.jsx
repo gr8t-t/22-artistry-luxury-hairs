@@ -38,7 +38,7 @@ export default function HeroVideo({ onPlayingChange }) {
   const [failed, setFailed] = useState(false)
   const ref = useRef(null)
   const report = useRef(onPlayingChange)
-  report.current = onPlayingChange
+  useEffect(() => { report.current = onPlayingChange })
 
   // wait until the page has loaded so the video never slows down the first paint
   useEffect(() => {
