@@ -76,7 +76,7 @@ export default function Home() {
             {/* Headline */}
             <h1
               className="display-xl opacity-0 translate-y-8"
-              style={{ fontSize: 'clamp(2.6rem, 6.4vw, 5.6rem)', fontWeight: 300, lineHeight: 1.04, animation: 'fadeUp .9s .25s cubic-bezier(.16,1,.3,1) forwards' }}
+              style={{ fontFamily: "'Italiana', Georgia, serif", fontSize: 'clamp(3.5rem, 10.5vw, 7.6rem)', fontWeight: 400, lineHeight: 0.98, letterSpacing: '-0.005em', animation: 'fadeUp .9s .25s cubic-bezier(.16,1,.3,1) forwards' }}
             >
               Your <em className="not-italic text-gradient">Beauty.</em><br />
               Our Artistry.
