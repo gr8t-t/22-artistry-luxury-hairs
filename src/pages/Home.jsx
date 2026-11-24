@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 import { ChevronRight, ArrowRight, Droplets, Layers, Eye, BookOpen, Gem, Sparkles, ShoppingBag, Star } from 'lucide-react'
 import InstagramIcon from '../components/InstagramIcon'
 import Reviews from '../components/Reviews'
-import HeroVideo from '../components/HeroVideo'
+import HeroArches from '../components/HeroArches'
 import { useStore } from '../context/StoreContext'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 const SERVICES = [
   { Icon: Droplets,  title: 'Professional Colouring',   desc: 'Vibrant, expert colour treatments that last and complement your unique beauty.' },
@@ -43,9 +43,6 @@ function useReveal(ref, when) {
 export default function Home() {
   const { products, gallery, addToCart } = useStore()
   const featured = products.filter(p => p.featured).slice(0, 3)
-  // on large screens the photo steps aside once the video panel is playing
-  const [vid, setVid] = useState({ playing: false, wide: false })
-  const photoHidden = vid.playing && vid.wide
   const statsRef    = useRef(null)
   const servicesRef = useRef(null)
   const productsRef = useRef(null)
@@ -59,27 +56,8 @@ export default function Home() {
       {/* ════════════════════════════════════════
           HERO — editorial split
       ════════════════════════════════════════ */}
-      <section className="relative md:min-h-screen flex overflow-hidden bg-brand-black">
+      <section className="relative overflow-hidden bg-brand-black">
 
-        {/* Full-bleed background image */}
-        <div
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${photoHidden ? 'opacity-0' : ''}`}
-          style={{ backgroundImage: `url('/front-pics.jpeg')` }}
-        />
-
-        {/* Salon video: full-screen behind the headline on phones, a framed panel on large screens */}
-        <HeroVideo onPlayingChange={(playing, wide) => setVid({ playing, wide })} />
-
-        {/* Gradient layers */}
-        <div className={`absolute inset-0 transition-opacity duration-1000 ${vid.playing && !vid.wide ? 'opacity-[0.75]' : ''}`}
-          style={{
-            background: 'linear-gradient(105deg, rgba(8,0,5,0.97) 0%, rgba(8,0,5,0.82) 45%, rgba(8,0,5,0.15) 100%)'
-          }}
-        />
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-40"
-          style={{ background: 'linear-gradient(to top, #080005, transparent)' }}
-        />
         {/* Pink ambient glow */}
         <div
           className="absolute pointer-events-none"
@@ -92,16 +70,15 @@ export default function Home() {
         />
 
         {/* Content */}
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-center pt-28 pb-10 md:pt-32 md:pb-20 md:min-h-screen">
-          <div className="max-w-[600px]">
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 pt-28 pb-14 md:pt-36 md:pb-24">
+          <div className="max-w-[760px]">
 
             {/* Headline */}
             <h1
               className="display-xl opacity-0 translate-y-8"
-              style={{ animation: 'fadeUp .9s .25s cubic-bezier(.16,1,.3,1) forwards' }}
+              style={{ fontSize: 'clamp(2.6rem, 6.4vw, 5.6rem)', fontWeight: 300, lineHeight: 1.04, animation: 'fadeUp .9s .25s cubic-bezier(.16,1,.3,1) forwards' }}
             >
-              Your<br />
-              <em className="not-italic text-gradient">Beauty.</em><br />
+              Your <em className="not-italic text-gradient">Beauty.</em><br />
               Our Artistry.
             </h1>
 
@@ -144,12 +121,9 @@ export default function Home() {
               <span className="body-copy text-xs">Trusted by 500+ clients across Nigeria</span>
             </div>
           </div>
-        </div>
 
-        {/* Scroll hint */}
-        <div className="absolute bottom-10 right-10 hidden md:flex flex-col items-center gap-4 opacity-40">
-          <span className="eyebrow" style={{ writingMode: 'vertical-rl', letterSpacing: '.2em' }}>SCROLL</span>
-          <div className="w-px h-16 bg-gradient-to-b from-brand-pink to-transparent animate-float" />
+          {/* Three arches: photo, salon video, photo */}
+          <HeroArches />
         </div>
       </section>
 
