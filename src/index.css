@@ -328,6 +328,11 @@ button:disabled { cursor: not-allowed; }
 :focus-visible { outline: 2px solid #FF6BA8; outline-offset: 3px; border-radius: 6px; }
 .input-field:focus-visible { outline: none; }
 
+/* Dropdown lists, date pickers and keyboards open in a dark theme with light text.
+   Without this, phones draw the open list in white while the text stays white, so the options look blank. */
+.input-field, select, input[type="date"], input[type="time"] { color-scheme: dark; }
+select option, select optgroup { background-color: #1a0a14; color: #ffffff; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
