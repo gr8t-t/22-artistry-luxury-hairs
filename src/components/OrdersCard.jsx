@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { Package } from 'lucide-react'
 import { api } from '../lib/api'
 import { naira, dateTime } from '../lib/format'
+import FinalReceipt from './FinalReceipt'
 
 const STATUS = { new: 'Waiting for confirmation', confirmed: 'Confirmed', ready: 'Ready', completed: 'Completed', cancelled: 'Cancelled' }
 
 export default function OrdersCard() {
   const [orders, setOrders] = useState(null)
   const [msg, setMsg] = useState('')
+  const [receipt, setReceipt] = useState(null)
 
   const load = useCallback(async () => {
     try { setOrders((await api('/me/orders')).orders) } catch { /* card stays hidden */ }
@@ -19,6 +21,9 @@ export default function OrdersCard() {
   const cancel = async (o) => {
     if (!window.confirm(`Cancel order ${o.orderNo}?`)) return
     try { await api(`/me/orders/${o.id}/cancel`, { method: 'POST' }); setMsg('Order cancelled.'); load() } catch (e) { setMsg(e.message) }
+  }
+  const viewReceipt = async (o) => {
+    try { setReceipt((await api(`/me/orders/${o.id}/receipt`)).receipt) } catch (e) { setMsg(e.message) }
   }
   const chat = (o) => {
     const text = `Hello 22 Artistry! About my order ${o.orderNo} (${naira(o.total)}).`
@@ -55,6 +60,7 @@ export default function OrdersCard() {
             {o.status === 'cancelled' && o.cancelReason && <p className="text-xs text-gray-400 font-poppins mt-1">{o.cancelReason}</p>}
             <div className="flex gap-4 mt-3">
               {o.status === 'new' && <button onClick={() => cancel(o)} className="text-xs text-gray-300 hover:text-white font-poppins">Cancel order</button>}
+              {o.status === 'completed' && <button onClick={() => viewReceipt(o)} className="text-xs text-brand-pink font-poppins">View receipt</button>}
               {o.status !== 'cancelled' && o.status !== 'completed' && (
                 <a href={chat(o)} target="_blank" rel="noreferrer" className="text-xs text-brand-pink font-poppins">Chat with us about this order</a>
               )}
@@ -63,6 +69,7 @@ export default function OrdersCard() {
         ))}
       </div>
       {msg && <p className="text-sm font-poppins text-gray-100 mt-3" role="status">{msg}</p>}
+      {receipt && <FinalReceipt receipt={receipt} onClose={() => setReceipt(null)} />}
     </div>
   )
 }

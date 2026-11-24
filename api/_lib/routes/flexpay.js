@@ -247,7 +247,7 @@ export async function markCollected(req, res) {
     where id = ${id} and status = 'completed' returning id, user_id`
   if (!done.length) throw new HttpError(409, 'Only a fully paid plan can be marked as collected.')
   await logActivity(staff.id, 'flexpay.collected', 'flexpay', id, {})
-  await notifyUser(done[0].user_id, { type: 'payment', title: 'Items collected', body: 'Thank you for choosing 22 Artistry. Your FlexPay plan is complete.', url: '/account' })
+  await notifyUser(done[0].user_id, { type: 'payment', title: 'Items collected', body: 'Thank you for choosing 22 Artistry. Your FlexPay plan is complete and your receipt is in My Account.', url: '/account' })
   send(res, 200, { ok: true })
 }
 
@@ -277,6 +277,34 @@ export async function decideStop(req, res) {
   send(res, 200, { ok: true, refund: r.refund_kobo == null ? null : koboToNaira(r.refund_kobo) })
 }
 
+// ── Final receipt (available once the plan is fully paid) ──
+async function planReceiptFor(id, ownerId = null) {
+  const p = (await sql`select f.*, flexpay_paid(f.id) as paid_kobo, u.name as customer, u.phone as customer_phone
+    from flexpay_plans f join users u on u.id = f.user_id where f.id = ${id}`)[0]
+  if (!p || (ownerId && p.user_id !== ownerId)) throw new HttpError(404, 'Plan not found')
+  if (p.status !== 'completed' && p.status !== 'collected') throw new HttpError(409, 'The receipt is ready once the plan is fully paid.')
+  const pays = await sql`select receipt_no, method, amount_kobo, created_at from payments
+    where flexpay_plan_id = ${id} and status = 'confirmed' order by created_at`
+  const v = planView(p)
+  return {
+    kind: 'plan', number: 'FP-' + String(id).slice(0, 8).toUpperCase(), status: p.status,
+    customer: { name: p.customer, phone: p.customer_phone },
+    items: v.items, total: v.total, paid: v.paid, weeks: v.weeks, startDate: v.startDate,
+    payments: pays.map((x) => ({ receiptNo: x.receipt_no, method: x.method, amount: koboToNaira(x.amount_kobo), date: new Date(x.created_at).toISOString() })),
+    completedAt: v.completedAt, collectedAt: v.collectedAt,
+  }
+}
+
+export async function myPlanReceipt(req, res) {
+  const user = await requireUser(req)
+  send(res, 200, { receipt: await planReceiptFor(uuid(req.params.id), user.id) })
+}
+
+export async function adminPlanReceipt(req, res) {
+  await requireUser(req, ['staff', 'manager'])
+  send(res, 200, { receipt: await planReceiptFor(uuid(req.params.id)) })
+}
+
 // ── Called by payments.js ──
 /** After a plan instalment: tell the customer when the plan starts or completes. */
 export async function flexAfterPayment(planId, userId, before, after) {
@@ -285,7 +313,7 @@ export async function flexAfterPayment(planId, userId, before, after) {
       await notifyUser(userId, { type: 'payment', title: 'FlexPay plan started', body: 'Your first payment is in. Your items are now held for you until the plan is fully paid.', url: '/account' })
     }
     if (after === 'completed') {
-      await notifyUser(userId, { type: 'payment', title: 'FlexPay fully paid', body: 'You have paid in full. Visit the salon to collect your items.', url: '/account' })
+      await notifyUser(userId, { type: 'payment', title: 'FlexPay fully paid', body: 'You have paid in full. Visit the salon to collect your items. Your receipt is ready in My Account.', url: '/account' })
       const who = (await sql`select name from users where id = ${userId}`)[0]?.name || 'A customer'
       await notifyStaff({ type: 'payment', title: 'FlexPay fully paid', body: `${who} finished a plan. Their items are ready to hand over.`, url: '/admin' })
     }

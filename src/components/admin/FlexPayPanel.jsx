@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { CalendarClock, Check, X, Repeat, Plus } from 'lucide-react'
+import { CalendarClock, Check, X, Repeat, Plus, Receipt } from 'lucide-react'
 import { api } from '../../lib/api'
 import { useStore } from '../../context/StoreContext'
 import { naira } from '../../lib/format'
 import { PLAN_STATUS, dayLabel, flexInstalment, weeksLabel } from '../../lib/flexpay'
+import FinalReceipt from '../FinalReceipt'
 
 const box = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }
 
@@ -147,6 +148,7 @@ export default function FlexPayPanel({ isManager, presetClient }) {
   const [msg, setMsg] = useState('')
   const [swapId, setSwapId] = useState('')
   const [busyId, setBusyId] = useState('')
+  const [receipt, setReceipt] = useState(null)
 
   const load = useCallback(async () => {
     try { setPlans((await api('/admin/flexpay')).plans) } catch (e) { setMsg(e.message) }
@@ -156,7 +158,13 @@ export default function FlexPayPanel({ isManager, presetClient }) {
   const collect = async (p) => {
     if (!window.confirm(`Mark ${p.customer}'s items as handed over?`)) return
     setBusyId(p.id); setMsg('')
-    try { await api(`/admin/flexpay/${p.id}/collect`, { method: 'POST' }); await load() } catch (e) { setMsg(e.message) } finally { setBusyId('') }
+    try {
+      await api(`/admin/flexpay/${p.id}/collect`, { method: 'POST' }); await load()
+      await showReceipt(p) // the deal is closed: staff can print it, send it, or skip
+    } catch (e) { setMsg(e.message) } finally { setBusyId('') }
+  }
+  const showReceipt = async (p) => {
+    try { setReceipt((await api(`/admin/flexpay/${p.id}/receipt`)).receipt) } catch (e) { setMsg(e.message) }
   }
   const decide = async (p, decision) => {
     let note
@@ -200,6 +208,7 @@ export default function FlexPayPanel({ isManager, presetClient }) {
         {(p.status === 'pending' || p.status === 'active') && swapId !== p.id && (
           <button onClick={() => setSwapId(p.id)} className="btn-outline text-xs py-2 px-4"><Repeat size={13} /> Change items</button>
         )}
+        {(p.status === 'completed' || p.status === 'collected') && <button onClick={() => showReceipt(p)} className="btn-outline text-xs py-2 px-4"><Receipt size={13} /> Receipt</button>}
         {p.status === 'completed' && <button disabled={busyId === p.id} onClick={() => collect(p)} className="btn-primary text-xs py-2 px-4 disabled:opacity-60"><Check size={14} /> Mark collected</button>}
         {isManager && p.stopRequested && (
           <>
@@ -237,6 +246,7 @@ export default function FlexPayPanel({ isManager, presetClient }) {
           {closed.length > 0 && section('Recent history', closed.slice(0, 10), '')}
         </>
       )}
+      {receipt && <FinalReceipt receipt={receipt} forStaff onClose={() => setReceipt(null)} />}
     </div>
   )
 }

@@ -222,7 +222,7 @@ export async function completeOrder(req, res) {
     throw new HttpError(409, `Record the full payment first: ${formatNaira(m.remaining)} is still to pay.`)
   }
   await logActivity(staff.id, 'order.completed', 'order', id, {})
-  await notifyUser(r[0].user_id, { type: 'payment', title: `Order ${r[0].order_no} complete`, body: 'Thank you for shopping with 22 Artistry Luxury Hairs.', url: '/account' })
+  await notifyUser(r[0].user_id, { type: 'payment', title: `Order ${r[0].order_no} complete`, body: 'Thank you for shopping with 22 Artistry Luxury Hairs. Your receipt is ready in My Account.', url: '/account' })
   send(res, 200, { order: mapOrder(await getOrder(id)) })
 }
 
@@ -241,6 +241,36 @@ export async function cancelOrder(req, res) {
   await logActivity(staff.id, 'order.cancelled', 'order', id, { reason })
   await notifyUser(out[0].user_id, { type: 'payment', title: 'Order cancelled', body: `Your order was cancelled. Reason: ${reason}`, url: '/account' })
   send(res, 200, { order: mapOrder(await getOrder(id)) })
+}
+
+// ── Final receipt (available once the deal is closed) ──
+async function orderReceiptFor(o) {
+  if (o.status !== 'completed') throw new HttpError(409, 'The receipt is ready once the order is completed.')
+  const pays = await sql`select receipt_no, method, amount_kobo, created_at from payments
+    where order_id = ${o.id} and status = 'confirmed' order by created_at`
+  const m = mapOrder(o)
+  return {
+    kind: 'order', number: o.order_no, status: 'completed',
+    customer: { name: o.customer, phone: o.customer_phone },
+    fulfilment: m.fulfilment, address: m.address,
+    items: m.items, subtotal: m.subtotal, deliveryFee: m.deliveryFee, total: m.total, paid: m.paid,
+    payments: pays.map((p) => ({ receiptNo: p.receipt_no, method: p.method, amount: koboToNaira(p.amount_kobo), date: new Date(p.created_at).toISOString() })),
+    placedAt: m.createdAt, completedAt: m.completedAt,
+  }
+}
+
+export async function myOrderReceipt(req, res) {
+  const user = await requireUser(req)
+  const o = await getOrder(uuid(req.params.id))
+  if (!o || o.user_id !== user.id) throw new HttpError(404, 'Order not found')
+  send(res, 200, { receipt: await orderReceiptFor(o) })
+}
+
+export async function adminOrderReceipt(req, res) {
+  await requireUser(req, ['staff', 'manager'])
+  const o = await getOrder(uuid(req.params.id))
+  if (!o) throw new HttpError(404, 'Order not found')
+  send(res, 200, { receipt: await orderReceiptFor(o) })
 }
 
 // ── Called by payments.js ──

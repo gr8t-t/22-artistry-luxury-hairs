@@ -3,6 +3,7 @@ import { CalendarClock, ChevronDown, Check } from 'lucide-react'
 import { api } from '../lib/api'
 import { naira } from '../lib/format'
 import { PLAN_STATUS, dayLabel, flexTerms } from '../lib/flexpay'
+import FinalReceipt from './FinalReceipt'
 
 const box = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }
 
@@ -11,12 +12,16 @@ function Plan({ p, rules, reload, setMsg }) {
   const [stopping, setStopping] = useState(false)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
+  const [receipt, setReceipt] = useState(null)
   const pct = Math.min(100, Math.floor((p.paid * 100) / p.total))
   const live = p.status === 'pending' || p.status === 'active'
 
   const cancel = async () => {
     if (!window.confirm('Cancel this plan? You have not paid anything, so it costs nothing.')) return
     try { await api(`/me/flexpay/${p.id}/cancel`, { method: 'POST' }); setMsg('Plan cancelled.'); reload() } catch (e) { setMsg(e.message) }
+  }
+  const viewReceipt = async () => {
+    try { setReceipt((await api(`/me/flexpay/${p.id}/receipt`)).receipt) } catch (err) { setMsg(err.message) }
   }
   const stop = async (e) => {
     e.preventDefault(); setBusy(true)
@@ -61,6 +66,7 @@ function Plan({ p, rules, reload, setMsg }) {
           Schedule <ChevronDown size={12} className={open ? 'rotate-180 transition-transform' : 'transition-transform'} />
         </button>
         {p.status === 'pending' && <button onClick={cancel} className="text-xs text-gray-300 hover:text-white font-poppins">Cancel plan</button>}
+        {(p.status === 'completed' || p.status === 'collected') && <button onClick={viewReceipt} className="text-xs text-brand-pink font-poppins">View receipt</button>}
         {p.status === 'active' && !p.stopRequested && p.paid > 0 && !stopping && (
           <button onClick={() => { setMsg(''); setStopping(true) }} className="text-xs text-gray-300 hover:text-white font-poppins">Stop this plan</button>
         )}
@@ -76,6 +82,8 @@ function Plan({ p, rules, reload, setMsg }) {
           ))}
         </ul>
       )}
+
+      {receipt && <FinalReceipt receipt={receipt} onClose={() => setReceipt(null)} />}
 
       {stopping && live && (
         <form onSubmit={stop} className="mt-3 space-y-3">

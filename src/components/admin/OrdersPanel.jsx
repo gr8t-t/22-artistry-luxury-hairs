@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Package, Check, X, Truck, Store } from 'lucide-react'
+import { Package, Check, X, Truck, Store, Receipt } from 'lucide-react'
 import { api } from '../../lib/api'
 import { naira, dateTime } from '../../lib/format'
+import FinalReceipt from '../FinalReceipt'
 
 const STATUS = { new: 'New', confirmed: 'Confirmed', ready: 'Ready', completed: 'Completed', cancelled: 'Cancelled' }
 const box = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }
@@ -10,6 +11,7 @@ export default function OrdersPanel() {
   const [orders, setOrders] = useState(null)
   const [msg, setMsg] = useState('')
   const [busyId, setBusyId] = useState('')
+  const [receipt, setReceipt] = useState(null)
 
   const load = useCallback(async () => {
     try { setOrders((await api('/admin/orders')).orders) } catch (e) { setMsg(e.message) }
@@ -18,7 +20,14 @@ export default function OrdersPanel() {
 
   const run = async (o, path, body) => {
     setBusyId(o.id); setMsg('')
-    try { await api(`/admin/orders/${o.id}/${path}`, { method: 'POST', body }); await load() } catch (e) { setMsg(e.message) } finally { setBusyId('') }
+    try {
+      await api(`/admin/orders/${o.id}/${path}`, { method: 'POST', body }); await load()
+      // the deal is closed: show the receipt so staff can print it, send it, or skip
+      if (path === 'complete') await showReceipt(o)
+    } catch (e) { setMsg(e.message) } finally { setBusyId('') }
+  }
+  const showReceipt = async (o) => {
+    try { setReceipt((await api(`/admin/orders/${o.id}/receipt`)).receipt) } catch (e) { setMsg(e.message) }
   }
   const confirmOrder = (o) => {
     let fee
@@ -60,6 +69,7 @@ export default function OrdersPanel() {
       </div>
       {o.status === 'cancelled' && o.cancelReason && <p className="text-xs text-gray-400 mt-2">{o.cancelReason}</p>}
       <div className="flex flex-wrap gap-2 mt-3">
+        {o.status === 'completed' && <button onClick={() => showReceipt(o)} className="btn-outline text-xs py-2 px-4"><Receipt size={14} /> Receipt</button>}
         {o.status === 'new' && <button disabled={busyId === o.id} onClick={() => confirmOrder(o)} className="btn-primary text-xs py-2 px-4 disabled:opacity-60"><Check size={14} /> Confirm</button>}
         {o.status === 'confirmed' && <button disabled={busyId === o.id} onClick={() => run(o, 'ready')} className="btn-primary text-xs py-2 px-4 disabled:opacity-60"><Check size={14} /> {o.fulfilment === 'delivery' ? 'Out for delivery' : 'Mark ready'}</button>}
         {(o.status === 'confirmed' || o.status === 'ready') && <button disabled={busyId === o.id} onClick={() => run(o, 'complete')} className="btn-outline text-xs py-2 px-4 disabled:opacity-60"><Check size={14} /> Complete</button>}
@@ -91,6 +101,7 @@ export default function OrdersPanel() {
           )}
         </>
       )}
+      {receipt && <FinalReceipt receipt={receipt} forStaff onClose={() => setReceipt(null)} />}
     </div>
   )
 }
