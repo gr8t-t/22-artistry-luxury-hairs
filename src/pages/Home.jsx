@@ -55,7 +55,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
           HERO — editorial split
       ════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex overflow-hidden bg-brand-black">
+      <section className="relative md:min-h-screen flex overflow-hidden bg-brand-black">
 
         {/* Full-bleed background image */}
         <div
@@ -85,7 +85,7 @@ export default function Home() {
         />
 
         {/* Content */}
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-center pt-32 pb-20 min-h-screen">
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-center pt-28 pb-10 md:pt-32 md:pb-20 md:min-h-screen">
           <div className="max-w-[600px]">
 
             {/* Top tag */}
@@ -188,7 +188,7 @@ export default function Home() {
           SERVICES
       ════════════════════════════════════════ */}
       <section ref={servicesRef} className="page-section">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-14">
           <div>
             <p className="eyebrow mb-3">What We Offer</p>
             <h2 className="display-md">
@@ -240,10 +240,10 @@ export default function Home() {
       {featured.length > 0 && (
         <section
           ref={productsRef}
-          className="py-20 md:py-28 border-y border-brand-border bg-brand-card"
+          className="py-12 md:py-28 border-y border-brand-border bg-brand-card"
         >
           <div className="max-w-6xl mx-auto px-5 md:px-10">
-            <div className="flex items-end justify-between mb-12">
+            <div className="flex items-end justify-between mb-8 md:mb-12">
               <div>
                 <p className="eyebrow mb-3">Shop</p>
                 <h2 className="display-md">Featured <span className="text-gradient">Products</span></h2>
@@ -320,7 +320,7 @@ export default function Home() {
       ════════════════════════════════════════ */}
       <section className="page-section">
         <div
-          className="relative overflow-hidden rounded-3xl px-8 py-16 md:px-16 md:py-20 text-center"
+          className="relative overflow-hidden rounded-3xl px-8 py-10 md:px-16 md:py-20 text-center"
           style={{
             background: 'linear-gradient(135deg, #9C0050 0%, #E4156B 50%, #c94080 100%)',
           }}
@@ -363,7 +363,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
           INSTAGRAM
       ════════════════════════════════════════ */}
-      <section className="pb-20 md:pb-28 px-5 md:px-10 max-w-6xl mx-auto w-full">
+      <section className="pb-12 md:pb-28 px-5 md:px-10 max-w-6xl mx-auto w-full">
         <div className="flex items-end justify-between mb-8">
           <div>
             <p className="eyebrow mb-2">Follow Our Work</p>

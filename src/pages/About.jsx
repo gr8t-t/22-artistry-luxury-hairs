@@ -13,7 +13,7 @@ export default function About() {
   return (
     <div className="pt-24 min-h-screen">
       {/* Hero */}
-      <div className="relative min-h-[60vh] flex items-center overflow-hidden">
+      <div className="relative min-h-[40vh] md:min-h-[60vh] flex items-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url('/ceo.jpeg')` }}
@@ -71,7 +71,7 @@ export default function About() {
       </section>
 
       {/* Founder / CEO */}
-      <section className="py-16 md:py-24 bg-brand-card border-y border-brand-border">
+      <section className="py-10 md:py-24 bg-brand-card border-y border-brand-border">
         <div className="page-section pt-0 pb-0">
           <div className="text-center mb-12">
             <p className="section-subtitle">The Visionary</p>

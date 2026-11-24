@@ -27,10 +27,10 @@ export default function Announcements() {
   const past   = announcements.filter(a => new Date(a.expiresAt) <= now)
 
   return (
-    <div className="pt-24 min-h-screen">
+    <div className="pt-24 md:min-h-screen">
       {/* Header */}
       <div
-        className="relative py-16 md:py-20 text-center overflow-hidden"
+        className="relative py-10 md:py-20 text-center overflow-hidden"
         style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(18px)' }}
       >
         <div
@@ -54,7 +54,7 @@ export default function Announcements() {
 
         {/* Active announcements */}
         {active.length > 0 && (
-          <div className="mb-16">
+          <div className="mb-10 md:mb-16">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               <p className="eyebrow" style={{ color: '#4ade80' }}>Live Now</p>
@@ -118,7 +118,7 @@ export default function Announcements() {
 
         {/* Empty state */}
         {active.length === 0 && (
-          <div className="text-center py-20">
+          <div className="text-center py-6 md:py-20">
             <Megaphone size={48} className="text-brand-border mx-auto mb-4" />
             <h3 className="display-md mb-3">No Active Announcements</h3>
             <p className="body-copy max-w-sm mx-auto">

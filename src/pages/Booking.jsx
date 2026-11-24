@@ -105,7 +105,7 @@ export default function Booking() {
   return (
     <div className="pt-24 min-h-screen">
       {/* Header */}
-      <div className="relative bg-brand-card border-b border-brand-border py-16 px-4 overflow-hidden">
+      <div className="relative bg-brand-card border-b border-brand-border py-10 md:py-16 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-pink/5 to-transparent" />
         <div className="max-w-6xl mx-auto relative z-10 text-center">
           <p className="section-subtitle">Reserve Your Spot</p>
