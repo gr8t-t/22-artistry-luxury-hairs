@@ -9,6 +9,7 @@ import * as payments from './_lib/routes/payments.js'
 import * as notifications from './_lib/routes/notifications.js'
 import * as rewards from './_lib/routes/rewards.js'
 import * as wallet from './_lib/routes/wallet.js'
+import * as flexpay from './_lib/routes/flexpay.js'
 
 const ROUTES = [
   // Accounts
@@ -35,6 +36,16 @@ const ROUTES = [
   ['GET',    '/admin/wallet/refunds', wallet.listRefunds],
   ['POST',   '/admin/wallet/refunds/:id/decide', wallet.decideRefund],
   ['GET',    '/cron/wallet-reminders', wallet.walletReminders],
+  ['GET',    '/cron/flexpay', flexpay.flexpayJob],
+  ['GET',    '/me/flexpay', flexpay.myPlans],
+  ['POST',   '/me/flexpay', flexpay.createPlan],
+  ['POST',   '/me/flexpay/:id/cancel', flexpay.cancelPlan],
+  ['POST',   '/me/flexpay/:id/stop', flexpay.requestStop],
+  ['GET',    '/admin/flexpay', flexpay.listPlans],
+  ['GET',    '/admin/flexpay/customer/:id', flexpay.customerPlans],
+  ['POST',   '/admin/flexpay/:id/items', flexpay.swapItems],
+  ['POST',   '/admin/flexpay/:id/collect', flexpay.markCollected],
+  ['POST',   '/admin/flexpay/:id/stop/decide', flexpay.decideStop],
   ['GET',    '/me/notifications',        notifications.listMine],
   ['POST',   '/me/notifications/read',   notifications.markRead],
   ['POST',   '/me/push/subscribe',       notifications.subscribe],

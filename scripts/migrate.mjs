@@ -221,6 +221,38 @@ const STATEMENTS = [
   )`,
   `create unique index if not exists uq_one_pending_refund on wallet_refund_requests (user_id) where status = 'pending'`,
   `create index if not exists idx_refund_status on wallet_refund_requests (status, created_at desc)`,
+
+  // ── Step 6: FlexPay instalment plans ──
+  `create table if not exists flexpay_plans (
+    id                 uuid primary key default gen_random_uuid(),
+    user_id            uuid not null references users(id),
+    items              jsonb not null,
+    total_kobo         bigint not null check (total_kobo > 0),
+    weeks              integer not null check (weeks between 2 and 22),
+    status             text not null default 'pending' check (status in ('pending','active','completed','collected','stopped','cancelled')),
+    start_date         date,
+    terms_version      text not null,
+    accepted_at        timestamptz not null default now(),
+    idempotency_key    text not null unique,
+    stop_requested_at  timestamptz,
+    stop_reason        text not null default '',
+    decided_by         uuid references users(id),
+    decided_at         timestamptz,
+    decision_note      text not null default '',
+    refund_kobo        bigint,
+    completed_at       timestamptz,
+    collected_at       timestamptz,
+    last_reminded_on   date,
+    created_at         timestamptz not null default now()
+  )`,
+  `create index if not exists idx_flexpay_user on flexpay_plans (user_id, created_at desc)`,
+  `create index if not exists idx_flexpay_status on flexpay_plans (status)`,
+  `alter table flexpay_plans alter column start_date type text using start_date::text`,
+  `alter table flexpay_plans alter column last_reminded_on type text using last_reminded_on::text`,
+  `alter table payments add column if not exists flexpay_plan_id uuid references flexpay_plans(id)`,
+  `create or replace function flexpay_paid(pid uuid) returns bigint language sql stable as
+     $$ select coalesce(sum(amount_kobo), 0)::bigint from payments where flexpay_plan_id = pid and status = 'confirmed' $$`,
+  `create index if not exists idx_payments_flexpay on payments (flexpay_plan_id) where flexpay_plan_id is not null`,
 ]
 
 for (const stmt of STATEMENTS) {

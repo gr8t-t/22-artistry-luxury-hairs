@@ -1,9 +1,12 @@
-import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react'
+import { useState } from 'react'
+import { X, Trash2, Plus, Minus, ShoppingBag, CalendarClock } from 'lucide-react'
+import FlexPayModal from './FlexPayModal'
 import { useStore } from '../context/StoreContext'
 import { Link } from 'react-router-dom'
 
 export default function CartDrawer() {
   const { cart, cartOpen, setCartOpen, removeFromCart, updateCartQty, cartTotal, checkoutViaWhatsApp, clearCart } = useStore()
+  const [flexOpen, setFlexOpen] = useState(false)
 
   return (
     <>
@@ -89,6 +92,12 @@ export default function CartDrawer() {
               <span className="text-white font-playfair font-bold text-xl">₦{cartTotal.toLocaleString()}</span>
             </div>
             <button
+              onClick={() => setFlexOpen(true)}
+              className="btn-outline w-full flex items-center justify-center gap-2"
+            >
+              <CalendarClock size={18} /> Pay in instalments (FlexPay)
+            </button>
+            <button
               onClick={() => { checkoutViaWhatsApp(); setCartOpen(false) }}
               className="btn-primary w-full flex items-center justify-center gap-2"
             >
@@ -106,6 +115,14 @@ export default function CartDrawer() {
           </div>
         )}
       </div>
+      {flexOpen && (
+        <FlexPayModal
+          items={cart}
+          total={cartTotal}
+          onClose={() => setFlexOpen(false)}
+          onDone={clearCart}
+        />
+      )}
     </>
   )
 }

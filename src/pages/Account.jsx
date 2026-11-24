@@ -7,6 +7,7 @@ import { naira, dateTime, PURPOSE_LABEL } from '../lib/format'
 import Receipt from '../components/Receipt'
 import { PushControls, InstallControls } from '../components/NotificationBell'
 import WalletCard from '../components/WalletCard'
+import FlexPayCard from '../components/FlexPayCard'
 
 function Field({ label, children }) {
   return (
@@ -238,6 +239,8 @@ function Profile() {
       )}
 
       <WalletCard />
+
+      <FlexPayCard />
 
       <div className="glass-card rounded-2xl p-6 mt-4">
         <div className="flex items-center gap-2 mb-1">

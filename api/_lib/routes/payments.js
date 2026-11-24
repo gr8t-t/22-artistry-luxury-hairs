@@ -6,11 +6,11 @@ import { nairaToKobo, koboToNaira, formatNaira, MAX_PAYMENT_KOBO } from '../mone
 import { notifyUser } from '../notify.js'
 import { applyRewardsForPayment, undoRewardsForPayment } from '../rewards.js'
 import { checkGoalReached, walletFigures } from './wallet.js'
+import { flexAfterPayment, flexAfterReversal } from './flexpay.js'
 
-// FlexPay instalments are added in a later step.
-const PURPOSES = ['service', 'product', 'booking_deposit', 'wallet_topup', 'other']
+const PURPOSES = ['service', 'product', 'booking_deposit', 'wallet_topup', 'flexpay_instalment', 'other']
 const METHODS = ['cash', 'pos', 'transfer', 'wallet']
-const PURPOSE_TEXT = { service: 'service', product: 'product purchase', booking_deposit: 'booking deposit', wallet_topup: 'Hair Wallet top-up', other: 'payment' }
+const PURPOSE_TEXT = { service: 'service', product: 'product purchase', booking_deposit: 'booking deposit', wallet_topup: 'Hair Wallet top-up', flexpay_instalment: 'FlexPay instalment', other: 'payment' }
 
 export const mapPayment = (p) => ({
   id: p.id,
@@ -95,8 +95,54 @@ export async function recordPayment(req, res) {
     if (!customer) throw new HttpError(400, 'Hair Wallet top-ups need a registered customer')
   }
 
+  // FlexPay: the plan must belong to this customer, be open, and the amount can never exceed what is left.
+  let flexPlan = null
+  let flexAfter = null
+  if (b.purpose === 'flexpay_instalment') {
+    if (!customer) throw new HttpError(400, 'FlexPay instalments need a registered customer')
+    const planId = uuid(b.planId, 'plan')
+    const pr = (await sql`select f.id, f.status, f.total_kobo, flexpay_paid(f.id) as paid_kobo from flexpay_plans f
+      where f.id = ${planId} and f.user_id = ${customer.id}`)[0]
+    if (!pr) throw new HttpError(400, 'That plan was not found for this customer')
+    if (!['pending', 'active'].includes(pr.status)) throw new HttpError(409, 'That plan is closed, so it cannot take payments')
+    const left = Number(pr.total_kobo) - Number(pr.paid_kobo)
+    if (kobo > left) throw new HttpError(400, `Only ${formatNaira(koboToNaira(left))} is left on this plan.`)
+    flexPlan = pr
+  }
+
   let inserted
-  if (b.purpose === 'wallet_topup') {
+  if (flexPlan) {
+    const id = crypto.randomUUID()
+    const result = await sql.transaction([
+      sql`select pg_advisory_xact_lock(hashtext(${'flex:' + flexPlan.id}))`,
+      sql`select pg_advisory_xact_lock(hashtext(${'wallet:' + customer.id}))`,
+      sql`insert into payments (id, receipt_no, idempotency_key, customer_id, customer_name, customer_phone, purpose,
+                                description, amount_kobo, method, reference, booking_id, recorded_by, flexpay_plan_id)
+          select ${id}::uuid, 'RC-' || to_char(now(), 'YYMM') || '-' || lpad(nextval('receipt_seq')::text, 5, '0'),
+                 ${key}::text, ${customer.id}::uuid, ${name}::text, ${phone}::text, 'flexpay_instalment',
+                 ${description}::text, ${kobo}::bigint, ${b.method}::text, ${reference}::text, ${bookingId}::uuid, ${staff.id}::uuid, ${flexPlan.id}::uuid
+          where exists (select 1 from flexpay_plans f where f.id = ${flexPlan.id}::uuid and f.user_id = ${customer.id}::uuid
+                          and f.status in ('pending','active') and ${kobo}::bigint <= f.total_kobo - flexpay_paid(f.id))
+            and (${b.method}::text <> 'wallet' or (select coalesce(sum(amount_kobo), 0) from wallet_ledger where user_id = ${customer.id}::uuid) >= ${kobo}::bigint)
+          on conflict (idempotency_key) do nothing returning id`,
+      sql`insert into wallet_ledger (user_id, amount_kobo, type, payment_id, note, created_by)
+          select ${customer.id}::uuid, ${-kobo}::bigint, 'wallet_spend', ${id}::uuid, 'FlexPay instalment', ${staff.id}::uuid
+          where ${b.method}::text = 'wallet' and exists (select 1 from payments where id = ${id}::uuid)`,
+      sql`update flexpay_plans f set
+            status = case when flexpay_paid(f.id) >= f.total_kobo then 'completed' when f.status = 'pending' then 'active' else f.status end,
+            start_date = coalesce(f.start_date, to_char(now() at time zone 'Africa/Lagos', 'YYYY-MM-DD')),
+            completed_at = case when flexpay_paid(f.id) >= f.total_kobo then now() else f.completed_at end
+          where f.id = ${flexPlan.id}::uuid and exists (select 1 from payments where id = ${id}::uuid)
+          returning f.status`,
+    ])
+    inserted = result[2]
+    flexAfter = result[4][0]?.status ?? null
+    if (!inserted.length && !(await sql`select 1 from payments where idempotency_key = ${key}`).length) {
+      throw new HttpError(409, b.method === 'wallet'
+        ? 'Could not record this: the Hair Wallet balance is too low, or the plan changed. Please check and try again.'
+        : 'Could not record this: the plan changed while you were typing. Please check the balance and try again.')
+    }
+  } else if (b.purpose === 'wallet_topup') {
     // The receipt and the wallet credit are written together, or not at all.
     const id = crypto.randomUUID()
     const result = await sql.transaction([
@@ -161,6 +207,7 @@ export async function recordPayment(req, res) {
         : `${formatNaira(payment.amount)} ${b.method === 'wallet' ? 'paid from your Hair Wallet' : 'received'} (${PURPOSE_TEXT[b.purpose]}). Receipt ${payment.receiptNo}.`, url: '/account',
     })
     if (b.purpose === 'wallet_topup') await checkGoalReached(customer.id)
+    if (flexPlan) await flexAfterPayment(flexPlan.id, customer.id, flexPlan.status, flexAfter)
   }
   // Loyalty points + referral reward (safe to repeat, never throws)
   const rewards = customer?.id ? await applyRewardsForPayment(inserted[0].id, staff.id) : null
@@ -185,7 +232,7 @@ export async function reversePayment(req, res) {
   const id = uuid(req.params.id)
   const reason = text(body(req).reason, 'Reason', { required: true, max: 300 })
   if (reason.length < 3) throw new HttpError(400, 'Please give a short reason')
-  const pre = (await sql`select purpose, customer_id from payments where id = ${id}`)[0]
+  const pre = (await sql`select purpose, customer_id, flexpay_plan_id from payments where id = ${id}`)[0]
   let rows
   if (pre?.purpose === 'wallet_topup' && pre.customer_id) {
     // A top-up can only be reversed while the customer still has that money in their wallet.
@@ -212,6 +259,7 @@ export async function reversePayment(req, res) {
   if (!rows.length) throw new HttpError(409, 'This payment was not found or is already reversed')
   await logActivity(manager.id, 'payment.reversed', 'payment', id, { reason })
   await undoRewardsForPayment(id)
+  if (pre?.flexpay_plan_id) await flexAfterReversal(pre.flexpay_plan_id)
   const payment = await getPayment(id)
   if (payment.customerId) {
     await notifyUser(payment.customerId, {

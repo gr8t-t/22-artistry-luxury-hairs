@@ -4,7 +4,7 @@ import { api } from '../../lib/api'
 import { naira, dateTime, PURPOSE_LABEL, METHOD_LABEL } from '../../lib/format'
 import Receipt from '../Receipt'
 
-const PURPOSES = ['service', 'product', 'booking_deposit', 'wallet_topup', 'other']
+const PURPOSES = ['service', 'product', 'booking_deposit', 'wallet_topup', 'flexpay_instalment', 'other']
 const METHODS = [
   { id: 'cash', label: 'Cash', Icon: Banknote },
   { id: 'pos', label: 'POS (card)', Icon: CreditCard },
@@ -36,6 +36,8 @@ export default function PaymentsPanel({ isManager }) {
   const [listError, setListError] = useState('')
   const [receipt, setReceipt] = useState(null)
   const [rewardNote, setRewardNote] = useState('')
+  const [plans, setPlans] = useState([])
+  const [planId, setPlanId] = useState('')
 
   const load = useCallback(async () => {
     try {
@@ -62,6 +64,18 @@ export default function PaymentsPanel({ isManager }) {
     return () => clearTimeout(t)
   }, [q, customer])
 
+  // FlexPay: load the chosen customer's open plans so staff can pick which one the money is for
+  useEffect(() => {
+    if (purpose !== 'flexpay_instalment' || !customer) { setPlans([]); setPlanId(''); return }
+    let cancelled = false
+    api('/admin/flexpay/customer/' + customer.id).then(d => {
+      if (cancelled) return
+      setPlans(d.plans)
+      setPlanId(d.plans.length === 1 ? d.plans[0].id : '')
+    }).catch(() => { if (!cancelled) setPlans([]) })
+    return () => { cancelled = true }
+  }, [purpose, customer])
+
   const reset = () => {
     setCustomer(null); setQ(''); setResults([]); setWalkName(''); setWalkPhone('')
     setDescription(''); setAmount(''); setReference(''); setError('')
@@ -74,6 +88,7 @@ export default function PaymentsPanel({ isManager }) {
     const value = Number(amount)
     if (!amount || !Number.isFinite(value) || value <= 0) return setError('Enter the amount received.')
     if (mode === 'registered' && !customer) return setError('Search and select the customer, or switch to Walk-in.')
+    if (purpose === 'flexpay_instalment' && (mode !== 'registered' || !planId)) return setError('Choose a registered customer and the FlexPay plan this payment is for.')
     if (purpose === 'wallet_topup' && mode !== 'registered') return setError('A Hair Wallet top-up needs a registered customer.')
     if (purpose === 'wallet_topup' && method === 'wallet') return setError('A top-up must be paid with cash, POS or transfer.')
     if (method === 'wallet' && mode !== 'registered') return setError('Hair Wallet can only be used for a registered customer.')
@@ -91,7 +106,7 @@ export default function PaymentsPanel({ isManager }) {
           customerId: mode === 'registered' ? customer.id : undefined,
           customerName: mode === 'walkin' ? walkName.trim() : undefined,
           customerPhone: mode === 'walkin' && walkPhone.trim() ? walkPhone.trim() : undefined,
-          purpose, description: description.trim(), amount: value, method, reference: reference.trim(),
+          purpose, planId: purpose === 'flexpay_instalment' ? planId : undefined, description: description.trim(), amount: value, method, reference: reference.trim(),
         },
       })
       setReceipt(d.payment)
@@ -212,6 +227,20 @@ export default function PaymentsPanel({ isManager }) {
               onChange={e => setAmount(e.target.value)} placeholder="0.00" />
           </div>
         </div>
+
+        {purpose === 'flexpay_instalment' && (
+          <div>
+            <label className={label}>Which FlexPay plan? *</label>
+            {!customer ? <p className="text-xs text-gray-400">Select the customer first.</p> : plans.length === 0 ? (
+              <p className="text-xs text-amber-300">This customer has no open FlexPay plan. They create one from their cart.</p>
+            ) : (
+              <select className="input-field" value={planId} onChange={e => { setPlanId(e.target.value); const pl = plans.find(x => x.id === e.target.value); if (pl?.next) setAmount(String(pl.next.amount)) }}>
+                <option value="">Choose a plan…</option>
+                {plans.map(pl => <option key={pl.id} value={pl.id}>{pl.items.map(i => i.name).join(', ')} · {naira(pl.remaining)} left</option>)}
+              </select>
+            )}
+          </div>
+        )}
 
         <div>
           <label className={label}>Details (optional)</label>
