@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom'
 import { ChevronRight, ArrowRight, Droplets, Layers, Eye, BookOpen, Gem, Sparkles, ShoppingBag, Star } from 'lucide-react'
 import InstagramIcon from '../components/InstagramIcon'
 import Reviews from '../components/Reviews'
+import HeroVideo from '../components/HeroVideo'
 import { useStore } from '../context/StoreContext'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const SERVICES = [
   { Icon: Droplets,  title: 'Professional Colouring',   desc: 'Vibrant, expert colour treatments that last and complement your unique beauty.' },
@@ -42,6 +43,9 @@ function useReveal(ref, when) {
 export default function Home() {
   const { products, gallery, addToCart } = useStore()
   const featured = products.filter(p => p.featured).slice(0, 3)
+  // on large screens the photo steps aside once the video panel is playing
+  const [vid, setVid] = useState({ playing: false, wide: false })
+  const photoHidden = vid.playing && vid.wide
   const statsRef    = useRef(null)
   const servicesRef = useRef(null)
   const productsRef = useRef(null)
@@ -59,12 +63,15 @@ export default function Home() {
 
         {/* Full-bleed background image */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${photoHidden ? 'opacity-0' : ''}`}
           style={{ backgroundImage: `url('/front-pics.jpeg')` }}
         />
 
+        {/* Salon video: full-screen behind the headline on phones, a framed panel on large screens */}
+        <HeroVideo onPlayingChange={(playing, wide) => setVid({ playing, wide })} />
+
         {/* Gradient layers */}
-        <div className="absolute inset-0"
+        <div className={`absolute inset-0 transition-opacity duration-1000 ${vid.playing && !vid.wide ? 'opacity-[0.75]' : ''}`}
           style={{
             background: 'linear-gradient(105deg, rgba(8,0,5,0.97) 0%, rgba(8,0,5,0.82) 45%, rgba(8,0,5,0.15) 100%)'
           }}
