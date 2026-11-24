@@ -7,6 +7,7 @@ import { notifyUser } from '../notify.js'
 import { applyRewardsForPayment, undoRewardsForPayment } from '../rewards.js'
 import { checkGoalReached, walletFigures } from './wallet.js'
 import { flexAfterPayment, flexAfterReversal } from './flexpay.js'
+import { orderAfterPayment } from './orders.js'
 
 const PURPOSES = ['service', 'product', 'booking_deposit', 'wallet_topup', 'flexpay_instalment', 'other']
 const METHODS = ['cash', 'pos', 'transfer', 'wallet']
@@ -110,6 +111,21 @@ export async function recordPayment(req, res) {
     flexPlan = pr
   }
 
+  // Order: money recorded against a confirmed in-app order can never exceed what is still owed on it.
+  let orderRow = null
+  if (b.orderId) {
+    if (b.purpose !== 'product') throw new HttpError(400, 'A payment for an order must be marked "Product purchase"')
+    if (!customer) throw new HttpError(400, 'Order payments need the registered customer who placed the order')
+    const oid = uuid(b.orderId, 'order')
+    const or = (await sql`select o.id, o.status, o.subtotal_kobo, o.delivery_fee_kobo, order_paid(o.id) as paid_kobo
+      from orders o where o.id = ${oid} and o.user_id = ${customer.id}`)[0]
+    if (!or) throw new HttpError(400, 'That order was not found for this customer')
+    if (!['confirmed', 'ready'].includes(or.status)) throw new HttpError(409, 'Only a confirmed order can take payments. Confirm the order first.')
+    const owed = Number(or.subtotal_kobo) + Number(or.delivery_fee_kobo || 0) - Number(or.paid_kobo)
+    if (kobo > owed) throw new HttpError(400, `Only ${formatNaira(koboToNaira(owed))} is left to pay on this order.`)
+    orderRow = or
+  }
+
   let inserted
   if (flexPlan) {
     const id = crypto.randomUUID()
@@ -141,6 +157,30 @@ export async function recordPayment(req, res) {
       throw new HttpError(409, b.method === 'wallet'
         ? 'Could not record this: the Hair Wallet balance is too low, or the plan changed. Please check and try again.'
         : 'Could not record this: the plan changed while you were typing. Please check the balance and try again.')
+    }
+  } else if (orderRow) {
+    const id = crypto.randomUUID()
+    const result = await sql.transaction([
+      sql`select pg_advisory_xact_lock(hashtext(${'order:' + orderRow.id}))`,
+      sql`select pg_advisory_xact_lock(hashtext(${'wallet:' + customer.id}))`,
+      sql`insert into payments (id, receipt_no, idempotency_key, customer_id, customer_name, customer_phone, purpose,
+                                description, amount_kobo, method, reference, booking_id, recorded_by, order_id)
+          select ${id}::uuid, 'RC-' || to_char(now(), 'YYMM') || '-' || lpad(nextval('receipt_seq')::text, 5, '0'),
+                 ${key}::text, ${customer.id}::uuid, ${name}::text, ${phone}::text, 'product',
+                 ${description}::text, ${kobo}::bigint, ${b.method}::text, ${reference}::text, ${bookingId}::uuid, ${staff.id}::uuid, ${orderRow.id}::uuid
+          where exists (select 1 from orders o where o.id = ${orderRow.id}::uuid and o.user_id = ${customer.id}::uuid and o.status in ('confirmed','ready')
+                          and ${kobo}::bigint <= o.subtotal_kobo + coalesce(o.delivery_fee_kobo, 0) - order_paid(o.id))
+            and (${b.method}::text <> 'wallet' or (select coalesce(sum(amount_kobo), 0) from wallet_ledger where user_id = ${customer.id}::uuid) >= ${kobo}::bigint)
+          on conflict (idempotency_key) do nothing returning id`,
+      sql`insert into wallet_ledger (user_id, amount_kobo, type, payment_id, note, created_by)
+          select ${customer.id}::uuid, ${-kobo}::bigint, 'wallet_spend', ${id}::uuid, 'Order payment', ${staff.id}::uuid
+          where ${b.method}::text = 'wallet' and exists (select 1 from payments where id = ${id}::uuid)`,
+    ])
+    inserted = result[2]
+    if (!inserted.length && !(await sql`select 1 from payments where idempotency_key = ${key}`).length) {
+      throw new HttpError(409, b.method === 'wallet'
+        ? 'Could not record this: the Hair Wallet balance is too low, or the order changed. Please check and try again.'
+        : 'Could not record this: the order changed while you were typing. Please check the balance and try again.')
     }
   } else if (b.purpose === 'wallet_topup') {
     // The receipt and the wallet credit are written together, or not at all.
@@ -208,6 +248,7 @@ export async function recordPayment(req, res) {
     })
     if (b.purpose === 'wallet_topup') await checkGoalReached(customer.id)
     if (flexPlan) await flexAfterPayment(flexPlan.id, customer.id, flexPlan.status, flexAfter)
+    if (orderRow) await orderAfterPayment(orderRow.id, customer.id)
   }
   // Loyalty points + referral reward (safe to repeat, never throws)
   const rewards = customer?.id ? await applyRewardsForPayment(inserted[0].id, staff.id) : null

@@ -6,13 +6,15 @@ import NotificationBell from '../components/NotificationBell'
 import RewardsPanel from '../components/admin/RewardsPanel'
 import RefundsPanel from '../components/admin/RefundsPanel'
 import FlexPayPanel from '../components/admin/FlexPayPanel'
+import OrdersPanel from '../components/admin/OrdersPanel'
+import ClientsPanel from '../components/admin/ClientsPanel'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
   Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone, Upload,
 } from 'lucide-react'
 
-const MANAGER_TABS = ['Payments', 'FlexPay', 'Rewards', 'Wallet', 'Bookings', 'Products', 'Gallery', 'Reviews', 'Announcements']
-const STAFF_TABS = ['Payments', 'FlexPay', 'Rewards', 'Bookings']
+const MANAGER_TABS = ['Payments', 'Orders', 'Clients', 'FlexPay', 'Rewards', 'Wallet', 'Bookings', 'Products', 'Gallery', 'Reviews', 'Announcements']
+const STAFF_TABS = ['Payments', 'Orders', 'Clients', 'FlexPay', 'Rewards', 'Bookings']
 const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 
 const BLANK_PRODUCT = { name: '', category: 'Hair', price: '', quantity: '', description: '', image: '', featured: false }
@@ -110,6 +112,9 @@ export default function Admin() {
   const [loginError, setLoginError] = useState('')
   const [signingIn, setSigningIn] = useState(false)
   const [tab, setTab] = useState('Payments')
+  // jump from a client's page to Payments / FlexPay with that client already chosen
+  const [preset, setPreset] = useState(null)
+  const goTo = (t, client) => { setPreset(client); setTab(t) }
   const isManager = user?.role === 'manager'
   const tabs = isManager ? MANAGER_TABS : STAFF_TABS
 
@@ -296,7 +301,7 @@ export default function Admin() {
           {tabs.map(t => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => goTo(t, null)}
               className={`px-5 py-2 rounded-full text-sm font-poppins font-medium transition-all whitespace-nowrap ${
                 tab === t ? 'bg-brand-pink text-white' : 'text-gray-400 hover:text-white'
               }`}
@@ -307,10 +312,16 @@ export default function Admin() {
         </div>
 
         {/* ── PAYMENTS TAB ── */}
-        {tab === 'Payments' && <PaymentsPanel isManager={isManager} />}
+        {tab === 'Payments' && <PaymentsPanel isManager={isManager} presetClient={preset} />}
+
+        {/* ── ORDERS TAB ── */}
+        {tab === 'Orders' && <OrdersPanel />}
+
+        {/* ── CLIENTS TAB ── */}
+        {tab === 'Clients' && <ClientsPanel onGo={goTo} />}
 
         {/* ── FLEXPAY TAB ── */}
-        {tab === 'FlexPay' && <FlexPayPanel isManager={isManager} />}
+        {tab === 'FlexPay' && <FlexPayPanel isManager={isManager} presetClient={preset} />}
 
         {/* ── WALLET REFUNDS TAB (manager) ── */}
         {tab === 'Wallet' && isManager && <RefundsPanel />}

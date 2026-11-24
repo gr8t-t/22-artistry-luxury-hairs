@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../context/StoreContext'
+import { useAuth } from '../context/AuthContext'
 import { CheckCircle, Calendar, Clock, User, Phone, MessageSquare, Scissors } from 'lucide-react'
 
 const SERVICES = [
@@ -23,7 +24,12 @@ const INITIAL = { name: '', phone: '', service: '', date: '', time: '', notes: '
 
 export default function Booking() {
   const { addBooking } = useStore()
+  const { user } = useAuth()
   const [form, setForm] = useState(INITIAL)
+  // logged-in customers do not retype their details
+  useEffect(() => {
+    if (user?.role === 'customer') setForm(f => ({ ...f, name: f.name || user.name, phone: f.phone || user.phone || '' }))
+  }, [user])
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)

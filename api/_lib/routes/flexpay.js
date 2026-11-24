@@ -84,8 +84,8 @@ export function planView(p, today = lagosToday()) {
   }
 }
 
-async function loadItems(raw) {
-  if (!Array.isArray(raw) || raw.length < 1 || raw.length > 20) throw new HttpError(400, 'Choose at least one item for your plan')
+export async function loadItems(raw, what = 'a plan') {
+  if (!Array.isArray(raw) || raw.length < 1 || raw.length > 20) throw new HttpError(400, `Choose at least one item for ${what === 'a plan' ? 'your plan' : 'your order'}`)
   const want = new Map()
   for (const r of raw) {
     const id = uuid(r?.productId, 'product')
@@ -98,7 +98,7 @@ async function loadItems(raw) {
   if (rows.length !== ids.length) throw new HttpError(400, 'One of the items is no longer available')
   const items = rows.map((p) => {
     const qty = want.get(p.id)
-    if (Number(p.price_kobo) <= 0) throw new HttpError(400, `${p.name} has no price yet, so it cannot be put on a plan`)
+    if (Number(p.price_kobo) <= 0) throw new HttpError(400, `${p.name} has no price yet, so it cannot be put on ${what}`)
     if (p.quantity < qty) throw new HttpError(400, `Only ${p.quantity} of ${p.name} in stock`)
     return { productId: p.id, name: p.name, qty, priceKobo: Number(p.price_kobo), image: p.image || '' }
   })
@@ -113,34 +113,52 @@ export async function myPlans(req, res) {
   send(res, 200, { plans: rows.map((r) => planView(r)), rules: { minWeeks: FLEX.minWeeks, maxWeeks: FLEX.maxWeeks, refundPercent: FLEX.refundPercent, pendingDays: FLEX.pendingDays, termsVersion: FLEX.termsVersion } })
 }
 
-export async function createPlan(req, res) {
-  const user = await requireUser(req, ['customer'])
-  const b = body(req)
+/** Creates a plan for `user`. A customer does it from their cart; staff can do it for a client in the salon. */
+async function buildPlan(user, b, byStaff = null) {
   const weeks = Number(b.weeks)
   if (!Number.isInteger(weeks) || weeks < FLEX.minWeeks || weeks > FLEX.maxWeeks) {
     throw new HttpError(400, `Choose a plan length between ${FLEX.minWeeks} weeks and ${FLEX.maxWeeks} weeks (about 5 months)`)
   }
-  if (b.acceptTerms !== true) throw new HttpError(400, 'Please read and accept the FlexPay terms')
+  if (b.acceptTerms !== true) throw new HttpError(400, byStaff ? 'Confirm that the client has read and agreed to the FlexPay terms' : 'Please read and accept the FlexPay terms')
   const key = text(b.idempotencyKey, 'Request id', { required: true, max: 80 })
   const { items, total } = await loadItems(b.items)
 
   const open = await sql`select count(*)::int as n from flexpay_plans where user_id = ${user.id} and status = any(${OPEN}::text[])`
-  if (open[0].n >= FLEX.maxOpenPlans) throw new HttpError(400, `You can have up to ${FLEX.maxOpenPlans} plans running at once. Finish or cancel one first.`)
+  if (open[0].n >= FLEX.maxOpenPlans) throw new HttpError(400, `${byStaff ? 'This client can' : 'You can'} have up to ${FLEX.maxOpenPlans} plans running at once. Finish or cancel one first.`)
 
   const ins = await sql`insert into flexpay_plans (user_id, items, total_kobo, weeks, terms_version, idempotency_key)
     values (${user.id}, ${JSON.stringify(items)}::jsonb, ${total}, ${weeks}, ${FLEX.termsVersion}, ${key})
     on conflict (idempotency_key) do nothing returning id`
-  if (!ins.length) return send(res, 200, { duplicate: true })
+  if (!ins.length) return null
   const id = ins[0].id
   const first = splitInstalments(total, weeks)[0]
-  await logActivity(user.id, 'flexpay.created', 'flexpay', id, { totalKobo: total, weeks })
+  await logActivity(byStaff?.id ?? user.id, 'flexpay.created', 'flexpay', id, { totalKobo: total, weeks, forCustomerId: user.id, byStaff: !!byStaff })
   await notifyUser(user.id, {
     type: 'payment', title: 'FlexPay plan created',
     body: `${money(total)} over ${weeks} weeks. Pay your first ${money(first)} at the salon within ${FLEX.pendingDays} days to start the plan and hold your items.`, url: '/account',
   })
-  await notifyStaff({ type: 'payment', title: 'New FlexPay plan', body: `${user.name}: ${money(total)} over ${weeks} weeks. First payment ${money(first)} expected.`, url: '/admin' })
+  if (!byStaff) await notifyStaff({ type: 'payment', title: 'New FlexPay plan', body: `${user.name}: ${money(total)} over ${weeks} weeks. First payment ${money(first)} expected.`, url: '/admin' })
   const row = (await sql`select f.*, flexpay_paid(f.id) as paid_kobo from flexpay_plans f where f.id = ${id}`)[0]
-  send(res, 201, { plan: planView(row) })
+  return planView(row)
+}
+
+export async function createPlan(req, res) {
+  const user = await requireUser(req, ['customer'])
+  const plan = await buildPlan(user, body(req))
+  if (!plan) return send(res, 200, { duplicate: true })
+  send(res, 201, { plan })
+}
+
+/** Staff start a plan for a client who is in the salon (including walk-in clients without an account). */
+export async function staffCreatePlan(req, res) {
+  const staff = await requireUser(req, ['staff', 'manager'])
+  const b = body(req)
+  const cid = uuid(b.customerId, 'client')
+  const user = (await sql`select id, name from users where id = ${cid} and role = 'customer' and is_active = true`)[0]
+  if (!user) throw new HttpError(404, 'Client not found')
+  const plan = await buildPlan(user, b, staff)
+  if (!plan) return send(res, 200, { duplicate: true })
+  send(res, 201, { plan })
 }
 
 /** The customer drops a plan that has no payment yet. */

@@ -1,10 +1,23 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { api } from '../lib/api'
 import { useAuth } from './AuthContext'
 
 const StoreContext = createContext(null)
 
 const IMPORT_DONE_KEY = 'artistry_import_done'
+
+const CART_KEY = 'artistry_cart_v2'
+const MAX_QTY = 10
+
+/** The cart is saved on this device (only product ids and quantities) so a refresh never empties it. */
+function readCartLines() {
+  try {
+    const a = JSON.parse(localStorage.getItem(CART_KEY) || '[]')
+    return Array.isArray(a)
+      ? a.filter(l => l && typeof l.id === 'string' && Number.isInteger(l.qty) && l.qty > 0).slice(0, 30).map(l => ({ id: l.id, qty: Math.min(l.qty, MAX_QTY) }))
+      : []
+  } catch { return [] }
+}
 
 function readLegacy(key) {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : [] } catch { return [] }
@@ -23,7 +36,7 @@ export function StoreProvider({ children }) {
   const [bookings, setBookings] = useState([])
   const [allReviews, setAllReviews] = useState(null) // manager only
 
-  const [cart, setCart] = useState([])
+  const [lines, setLines] = useState(readCartLines)
   const [cartOpen, setCartOpen] = useState(false)
 
   const loadCatalog = useCallback(async (fresh = false) => {
@@ -151,21 +164,62 @@ export function StoreProvider({ children }) {
     return d.imported
   })
 
-  // Cart (kept in this browser only)
+  // Cart: saved on this device, and in the customer's account once they are logged in
+  useEffect(() => {
+    try {
+      if (lines.length) localStorage.setItem(CART_KEY, JSON.stringify(lines))
+      else localStorage.removeItem(CART_KEY)
+    } catch { /* private mode: the cart still works until the tab closes */ }
+  }, [lines])
+
+  const cart = useMemo(
+    () => lines.map(l => { const p = products.find(x => x.id === l.id); return p ? { ...p, qty: l.qty } : null }).filter(Boolean),
+    [lines, products],
+  )
+
+  const cartOwner = user?.role === 'customer' ? user.id : null
+  const syncedFor = useRef(null)
+  useEffect(() => {
+    let cancelled = false
+    if (!cartOwner) {
+      // logged out: do not leave the previous customer's cart on a shared device
+      if (syncedFor.current) { syncedFor.current = null; setLines([]) }
+      return
+    }
+    api('/me/cart').then(d => {
+      if (cancelled) return
+      setLines(prev => {
+        const m = new Map(prev.map(l => [l.id, l.qty]))
+        for (const i of d.items || []) m.set(i.productId, Math.max(m.get(i.productId) || 0, Math.min(i.qty, MAX_QTY)))
+        return [...m].map(([id, qty]) => ({ id, qty }))
+      })
+      syncedFor.current = cartOwner
+    }).catch(() => { syncedFor.current = cartOwner })
+    return () => { cancelled = true }
+  }, [cartOwner])
+
+  useEffect(() => {
+    if (!cartOwner || syncedFor.current !== cartOwner) return
+    const t = setTimeout(() => {
+      api('/me/cart', { method: 'PUT', body: { items: lines.map(l => ({ productId: l.id, qty: l.qty })) } }).catch(() => {})
+    }, 700)
+    return () => clearTimeout(t)
+  }, [lines, cartOwner])
+
   const addToCart = (product) => {
-    setCart(prev => {
+    setLines(prev => {
       const existing = prev.find(i => i.id === product.id)
-      if (existing) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i)
-      return [...prev, { ...product, qty: 1 }]
+      if (existing) return prev.map(i => i.id === product.id ? { ...i, qty: Math.min(MAX_QTY, i.qty + 1) } : i)
+      return [...prev, { id: product.id, qty: 1 }]
     })
     setCartOpen(true)
   }
-  const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id))
+  const removeFromCart = (id) => setLines(prev => prev.filter(i => i.id !== id))
   const updateCartQty = (id, qty) => {
     if (qty < 1) return removeFromCart(id)
-    setCart(prev => prev.map(i => i.id === id ? { ...i, qty } : i))
+    setLines(prev => prev.map(i => i.id === id ? { ...i, qty: Math.min(MAX_QTY, qty) } : i))
   }
-  const clearCart = () => setCart([])
+  const clearCart = () => setLines([])
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0)
   const cartCount = cart.reduce((sum, i) => sum + i.qty, 0)
 

@@ -10,6 +10,9 @@ import * as notifications from './_lib/routes/notifications.js'
 import * as rewards from './_lib/routes/rewards.js'
 import * as wallet from './_lib/routes/wallet.js'
 import * as flexpay from './_lib/routes/flexpay.js'
+import * as cart from './_lib/routes/cart.js'
+import * as orders from './_lib/routes/orders.js'
+import * as clients from './_lib/routes/clients.js'
 
 const ROUTES = [
   // Accounts
@@ -37,11 +40,27 @@ const ROUTES = [
   ['POST',   '/admin/wallet/refunds/:id/decide', wallet.decideRefund],
   ['GET',    '/cron/wallet-reminders', wallet.walletReminders],
   ['GET',    '/cron/flexpay', flexpay.flexpayJob],
+  ['GET',    '/me/cart', cart.getCart],
+  ['PUT',    '/me/cart', cart.putCart],
+  ['GET',    '/me/orders', orders.myOrders],
+  ['POST',   '/me/orders', orders.createOrder],
+  ['POST',   '/me/orders/:id/cancel', orders.cancelMyOrder],
+  ['GET',    '/admin/orders', orders.listOrders],
+  ['GET',    '/admin/orders/customer/:id', orders.customerOrders],
+  ['POST',   '/admin/orders/:id/confirm', orders.confirmOrder],
+  ['POST',   '/admin/orders/:id/ready', orders.readyOrder],
+  ['POST',   '/admin/orders/:id/complete', orders.completeOrder],
+  ['POST',   '/admin/orders/:id/cancel', orders.cancelOrder],
+  ['GET',    '/admin/clients', clients.listClients],
+  ['POST',   '/admin/clients', clients.createClient],
+  ['GET',    '/admin/clients/:id', clients.clientDetail],
+  ['PATCH',  '/admin/clients/:id', clients.updateClient],
   ['GET',    '/me/flexpay', flexpay.myPlans],
   ['POST',   '/me/flexpay', flexpay.createPlan],
   ['POST',   '/me/flexpay/:id/cancel', flexpay.cancelPlan],
   ['POST',   '/me/flexpay/:id/stop', flexpay.requestStop],
   ['GET',    '/admin/flexpay', flexpay.listPlans],
+  ['POST',   '/admin/flexpay', flexpay.staffCreatePlan],
   ['GET',    '/admin/flexpay/customer/:id', flexpay.customerPlans],
   ['POST',   '/admin/flexpay/:id/items', flexpay.swapItems],
   ['POST',   '/admin/flexpay/:id/collect', flexpay.markCollected],

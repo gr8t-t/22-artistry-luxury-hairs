@@ -14,7 +14,34 @@ const METHODS = [
 
 const newKey = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2))
 
-export default function PaymentsPanel({ isManager }) {
+/** Add someone who has no phone or account as an in-salon client, so wallet, FlexPay and points can be tracked for them. */
+function QuickAddClient({ initialName = '', onCreated }) {
+  const [name, setName] = useState(initialName)
+  const [phone, setPhone] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const add = async () => {
+    setBusy(true); setErr('')
+    try {
+      const d = await api('/admin/clients', { method: 'POST', body: { name: name.trim(), phone: phone.trim() || undefined } })
+      onCreated(d.client)
+    } catch (e) { setErr(e.message) } finally { setBusy(false) }
+  }
+  return (
+    <div className="mt-3 rounded-xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <p className="text-white text-sm font-semibold">Add an in-salon client</p>
+      <p className="text-xs text-gray-300 font-poppins">For people who do not use the website. They can save in the Hair Wallet, use FlexPay and earn points, and the manager can follow everything they do.</p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <input className="input-field" placeholder="Full name *" value={name} onChange={e => setName(e.target.value)} maxLength={80} />
+        <input className="input-field" placeholder="Phone (optional)" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} />
+      </div>
+      {err && <p className="text-red-400 text-sm" role="alert">{err}</p>}
+      <button type="button" onClick={add} disabled={busy || name.trim().length < 2} className="btn-primary text-sm py-2 px-5 disabled:opacity-60">{busy ? 'Adding…' : 'Add client and continue'}</button>
+    </div>
+  )
+}
+
+export default function PaymentsPanel({ isManager, presetClient }) {
   const [mode, setMode] = useState('registered') // registered | walkin
   const [q, setQ] = useState('')
   const [results, setResults] = useState([])
@@ -37,6 +64,9 @@ export default function PaymentsPanel({ isManager }) {
   const [receipt, setReceipt] = useState(null)
   const [rewardNote, setRewardNote] = useState('')
   const [plans, setPlans] = useState([])
+  const [orders, setOrders] = useState([])
+  const [orderId, setOrderId] = useState('')
+  const [showQuick, setShowQuick] = useState(false)
   const [planId, setPlanId] = useState('')
 
   const load = useCallback(async () => {
@@ -76,8 +106,21 @@ export default function PaymentsPanel({ isManager }) {
     return () => { cancelled = true }
   }, [purpose, customer])
 
+  // Open orders of the chosen customer that still owe money, so a product payment can be tied to the order
+  useEffect(() => {
+    if (purpose !== 'product' || !customer) { setOrders([]); setOrderId(''); return }
+    let cancelled = false
+    api('/admin/orders/customer/' + customer.id).then(d => { if (!cancelled) { setOrders(d.orders); setOrderId('') } }).catch(() => { if (!cancelled) setOrders([]) })
+    return () => { cancelled = true }
+  }, [purpose, customer])
+
+  // Jumped here from a client's page
+  useEffect(() => {
+    if (presetClient) { setMode('registered'); setCustomer(presetClient) }
+  }, [presetClient])
+
   const reset = () => {
-    setCustomer(null); setQ(''); setResults([]); setWalkName(''); setWalkPhone('')
+    setCustomer(null); setQ(''); setResults([]); setWalkName(''); setWalkPhone(''); setShowQuick(false); setOrderId('')
     setDescription(''); setAmount(''); setReference(''); setError('')
     keyRef.current = newKey()
   }
@@ -88,10 +131,10 @@ export default function PaymentsPanel({ isManager }) {
     const value = Number(amount)
     if (!amount || !Number.isFinite(value) || value <= 0) return setError('Enter the amount received.')
     if (mode === 'registered' && !customer) return setError('Search and select the customer, or switch to Walk-in.')
-    if (purpose === 'flexpay_instalment' && (mode !== 'registered' || !planId)) return setError('Choose a registered customer and the FlexPay plan this payment is for.')
-    if (purpose === 'wallet_topup' && mode !== 'registered') return setError('A Hair Wallet top-up needs a registered customer.')
+    if (purpose === 'flexpay_instalment' && (mode !== 'registered' || !planId)) return setError('Choose the customer or client and the FlexPay plan this payment is for.')
+    if (purpose === 'wallet_topup' && mode !== 'registered') return setError('A Hair Wallet top-up needs a customer or an in-salon client. Add them as a client first.')
     if (purpose === 'wallet_topup' && method === 'wallet') return setError('A top-up must be paid with cash, POS or transfer.')
-    if (method === 'wallet' && mode !== 'registered') return setError('Hair Wallet can only be used for a registered customer.')
+    if (method === 'wallet' && mode !== 'registered') return setError('Hair Wallet can only be used for a customer or in-salon client.')
     if (mode === 'walkin' && !walkName.trim()) return setError('Enter the customer\'s name.')
 
     const who = mode === 'registered' ? customer.name : walkName.trim()
@@ -106,7 +149,7 @@ export default function PaymentsPanel({ isManager }) {
           customerId: mode === 'registered' ? customer.id : undefined,
           customerName: mode === 'walkin' ? walkName.trim() : undefined,
           customerPhone: mode === 'walkin' && walkPhone.trim() ? walkPhone.trim() : undefined,
-          purpose, planId: purpose === 'flexpay_instalment' ? planId : undefined, description: description.trim(), amount: value, method, reference: reference.trim(),
+          purpose, planId: purpose === 'flexpay_instalment' ? planId : undefined, orderId: purpose === 'product' && orderId ? orderId : undefined, description: description.trim(), amount: value, method, reference: reference.trim(),
         },
       })
       setReceipt(d.payment)
@@ -155,7 +198,7 @@ export default function PaymentsPanel({ isManager }) {
         <h2 className="font-playfair text-white font-semibold text-xl">Record a payment</h2>
 
         <div className="grid grid-cols-2 gap-1 p-1 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
-          {[['registered', 'Registered customer'], ['walkin', 'Walk-in']].map(([m, t]) => (
+          {[['registered', 'Customer or client'], ['walkin', 'One-off sale']].map(([m, t]) => (
             <button type="button" key={m} onClick={() => { setMode(m); setError('') }}
               className={`py-2 rounded-full text-sm font-poppins transition-all ${mode === m ? 'bg-brand-pink text-white' : 'text-gray-300 hover:text-white'}`}>
               {t}
@@ -172,7 +215,7 @@ export default function PaymentsPanel({ isManager }) {
                   <UserRound size={16} className="text-brand-pink shrink-0" />
                   <div className="min-w-0">
                     <p className="text-white text-sm font-semibold truncate">{customer.name}</p>
-                    <p className="text-gray-300 text-xs">{customer.phone}</p>
+                    <p className="text-gray-300 text-xs">{customer.phone || 'In-salon client'}</p>
                   </div>
                 </div>
                 <button type="button" onClick={() => { setCustomer(null); setQ('') }} className="text-gray-300 hover:text-white" aria-label="Change customer"><X size={16} /></button>
@@ -189,28 +232,38 @@ export default function PaymentsPanel({ isManager }) {
                         <button type="button" onClick={() => { setCustomer(c); setResults([]) }}
                           className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors">
                           <span className="text-white text-sm block">{c.name}</span>
-                          <span className="text-gray-400 text-xs">{c.phone}</span>
+                          <span className="text-gray-400 text-xs">{c.phone || 'In-salon client'}</span>
                         </button>
                       </li>
                     ))}
                   </ul>
                 )}
                 {q.trim().length >= 2 && results.length === 0 && searchedFor === q.trim().replace(/\//g, '') && (
-                  <p className="text-xs text-gray-400 mt-2">No match yet — if they have no account, use the Walk-in tab.</p>
+                  <p className="text-xs text-gray-400 mt-2">No match yet. If they have no account or phone, add them as an in-salon client below.</p>
                 )}
+                {!showQuick && (
+                  <button type="button" onClick={() => setShowQuick(true)} className="text-brand-pink text-xs font-poppins mt-2">+ Add an in-salon client (no phone needed)</button>
+                )}
+                {showQuick && <QuickAddClient initialName={q.trim()} onCreated={c => { setCustomer(c); setShowQuick(false); setResults([]) }} />}
               </div>
             )}
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className={label}>Customer name *</label>
-              <input className="input-field" value={walkName} onChange={e => setWalkName(e.target.value)} placeholder="Full name" />
+          <div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className={label}>Customer name *</label>
+                <input className="input-field" value={walkName} onChange={e => setWalkName(e.target.value)} placeholder="Full name" />
+              </div>
+              <div>
+                <label className={label}>Phone (optional)</label>
+                <input className="input-field" inputMode="tel" value={walkPhone} onChange={e => setWalkPhone(e.target.value)} placeholder="08012345678" />
+              </div>
             </div>
-            <div>
-              <label className={label}>Phone (optional)</label>
-              <input className="input-field" inputMode="tel" value={walkPhone} onChange={e => setWalkPhone(e.target.value)} placeholder="08012345678" />
-            </div>
+            <p className="text-xs text-gray-400 font-poppins mt-2">A one-off sale is not tracked. For a Hair Wallet top-up, FlexPay or points, add them as an in-salon client instead.</p>
+            {(purpose === 'wallet_topup' || purpose === 'flexpay_instalment') && (
+              <QuickAddClient initialName={walkName} onCreated={c => { setMode('registered'); setCustomer(c) }} />
+            )}
           </div>
         )}
 
@@ -228,11 +281,21 @@ export default function PaymentsPanel({ isManager }) {
           </div>
         </div>
 
+        {purpose === 'product' && customer && orders.length > 0 && (
+          <div>
+            <label className={label}>For which order? (optional)</label>
+            <select className="input-field" value={orderId} onChange={e => { setOrderId(e.target.value); const o = orders.find(x => x.id === e.target.value); if (o) setAmount(String(o.remaining)) }}>
+              <option value="">Not for an order</option>
+              {orders.map(o => <option key={o.id} value={o.id}>{o.orderNo} · {naira(o.remaining)} left</option>)}
+            </select>
+          </div>
+        )}
+
         {purpose === 'flexpay_instalment' && (
           <div>
             <label className={label}>Which FlexPay plan? *</label>
             {!customer ? <p className="text-xs text-gray-400">Select the customer first.</p> : plans.length === 0 ? (
-              <p className="text-xs text-amber-300">This customer has no open FlexPay plan. They create one from their cart.</p>
+              <p className="text-xs text-amber-300">No open FlexPay plan yet. They can create one from their cart, or start one for them in the FlexPay tab.</p>
             ) : (
               <select className="input-field" value={planId} onChange={e => { setPlanId(e.target.value); const pl = plans.find(x => x.id === e.target.value); if (pl?.next) setAmount(String(pl.next.amount)) }}>
                 <option value="">Choose a plan…</option>

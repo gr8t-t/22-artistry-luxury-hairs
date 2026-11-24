@@ -4,7 +4,8 @@ import { sql } from './db.js'
 import { HttpError } from './http.js'
 
 const COOKIE = 'artistry_session'
-const MAX_AGE = 60 * 60 * 24 * 30 // 30 days
+const MAX_AGE = 60 * 60 * 24 * 90 // 90 days, renewed whenever the person keeps using the site
+const RENEW_AFTER = 60 * 60 * 24 // renew the cookie when it is more than a day old
 
 function secretKey() {
   const s = process.env.AUTH_SECRET
@@ -59,11 +60,17 @@ export async function currentUser(req) {
     const { payload } = await jwtVerify(token, secretKey(), { algorithms: ['HS256'] })
     const rows = await sql`select * from users where id = ${payload.sub}`
     const u = rows[0]
-    if (!u || !u.is_active || u.token_version !== payload.tv) return null
+    if (!u || !u.is_active || u.is_walkin || u.token_version !== payload.tv) return null
+    u._iat = payload.iat
     return u
   } catch {
     return null
   }
+}
+
+/** Sliding login: an active person never gets logged out, because each visit renews the cookie. */
+export async function renewSessionIfOld(res, user) {
+  if (user?._iat && Date.now() / 1000 - user._iat > RENEW_AFTER) await issueSession(res, user)
 }
 
 /** Throws 401/403 unless a logged-in user has one of the given roles (any role if none given). */

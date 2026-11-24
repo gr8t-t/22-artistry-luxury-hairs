@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Star, Send, MessageSquare } from 'lucide-react'
 import { useStore } from '../context/StoreContext'
+import { useAuth } from '../context/AuthContext'
 
 function StarRating({ value, onChange, readOnly = false, size = 20 }) {
   const [hovered, setHovered] = useState(0)
@@ -39,11 +40,16 @@ const SERVICES = [
 
 export default function Reviews() {
   const { reviews, addReview } = useStore()
+  const { user } = useAuth()
   const approved = reviews.filter(r => r.approved)
 
   const [form, setForm] = useState(BLANK)
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(false)
+  // logged-in customers do not retype their name
+  useEffect(() => {
+    if (user?.role === 'customer') setForm(f => ({ ...f, name: f.name || user.name }))
+  }, [user])
 
   const avg = approved.length
     ? (approved.reduce((s, r) => s + r.rating, 0) / approved.length).toFixed(1)

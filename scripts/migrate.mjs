@@ -253,6 +253,46 @@ const STATEMENTS = [
   `create or replace function flexpay_paid(pid uuid) returns bigint language sql stable as
      $$ select coalesce(sum(amount_kobo), 0)::bigint from payments where flexpay_plan_id = pid and status = 'confirmed' $$`,
   `create index if not exists idx_payments_flexpay on payments (flexpay_plan_id) where flexpay_plan_id is not null`,
+
+  // ── Step 7: in-salon (walk-in) clients, saved carts, in-app orders ──
+  `alter table users alter column phone drop not null`,
+  `alter table users alter column password_hash drop not null`,
+  `alter table users add column if not exists is_walkin boolean not null default false`,
+  `alter table users add column if not exists created_by uuid references users(id)`,
+  `create table if not exists carts (
+    user_id    uuid primary key references users(id),
+    items      jsonb not null default '[]'::jsonb,
+    updated_at timestamptz not null default now()
+  )`,
+  `create sequence if not exists order_seq`,
+  `create table if not exists orders (
+    id                uuid primary key default gen_random_uuid(),
+    order_no          text not null unique,
+    user_id           uuid not null references users(id),
+    status            text not null default 'new' check (status in ('new','confirmed','ready','completed','cancelled')),
+    fulfilment        text not null check (fulfilment in ('pickup','delivery')),
+    delivery_address  text not null default '',
+    contact_phone     text not null default '',
+    note              text not null default '',
+    items             jsonb not null,
+    subtotal_kobo     bigint not null check (subtotal_kobo > 0),
+    delivery_fee_kobo bigint check (delivery_fee_kobo >= 0),
+    stock_reduced     boolean not null default false,
+    idempotency_key   text not null unique,
+    confirmed_by      uuid references users(id),
+    confirmed_at      timestamptz,
+    ready_at          timestamptz,
+    completed_at      timestamptz,
+    cancelled_at      timestamptz,
+    cancel_reason     text not null default '',
+    created_at        timestamptz not null default now()
+  )`,
+  `create index if not exists idx_orders_user on orders (user_id, created_at desc)`,
+  `create index if not exists idx_orders_status on orders (status, created_at desc)`,
+  `alter table payments add column if not exists order_id uuid references orders(id)`,
+  `create index if not exists idx_payments_order on payments (order_id) where order_id is not null`,
+  `create or replace function order_paid(oid uuid) returns bigint language sql stable as
+     $$ select coalesce(sum(amount_kobo), 0)::bigint from payments where order_id = oid and status = 'confirmed' $$`,
 ]
 
 for (const stmt of STATEMENTS) {

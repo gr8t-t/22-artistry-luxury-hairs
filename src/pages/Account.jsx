@@ -8,6 +8,7 @@ import Receipt from '../components/Receipt'
 import { PushControls, InstallControls } from '../components/NotificationBell'
 import WalletCard from '../components/WalletCard'
 import FlexPayCard from '../components/FlexPayCard'
+import OrdersCard from '../components/OrdersCard'
 
 function Field({ label, children }) {
   return (
@@ -18,7 +19,8 @@ function Field({ label, children }) {
   )
 }
 
-function AuthForms() {
+/** The log in / sign up form. `embedded` hides the page heading so it can sit inside the checkout. */
+export function AuthForms({ embedded = false } = {}) {
   const { login, register } = useAuth()
   const [params] = useSearchParams()
   const refFromLink = (params.get('ref') || '').toUpperCase()
@@ -75,15 +77,17 @@ function AuthForms() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="text-center mb-8">
-        <p className="eyebrow mb-3">My Account</p>
-        <h1 className="display-md">{mode === 'login' ? 'Welcome back' : 'Create your account'}</h1>
-        <p className="body-copy mt-3">
-          {mode === 'login'
-            ? 'Log in with your phone number or email.'
-            : 'Join to book faster, earn rewards and track your orders.'}
-        </p>
-      </div>
+      {!embedded && (
+        <div className="text-center mb-8">
+          <p className="eyebrow mb-3">My Account</p>
+          <h1 className="display-md">{mode === 'login' ? 'Welcome back' : 'Create your account'}</h1>
+          <p className="body-copy mt-3">
+            {mode === 'login'
+              ? 'Log in with your phone number or email.'
+              : 'Join to book faster, earn rewards and track your orders.'}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-1 p-1 rounded-full mb-6" style={{ background: 'rgba(255,255,255,0.04)' }}>
         {[['login', 'Log in'], ['register', 'Sign up']].map(([m, label]) => (
@@ -239,6 +243,8 @@ function Profile() {
       )}
 
       <WalletCard />
+
+      <OrdersCard />
 
       <FlexPayCard />
 

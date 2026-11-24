@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
-import { CalendarClock, Check, X, Repeat } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { CalendarClock, Check, X, Repeat, Plus } from 'lucide-react'
 import { api } from '../../lib/api'
 import { useStore } from '../../context/StoreContext'
 import { naira } from '../../lib/format'
-import { PLAN_STATUS, dayLabel } from '../../lib/flexpay'
+import { PLAN_STATUS, dayLabel, flexInstalment, weeksLabel } from '../../lib/flexpay'
 
 const box = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }
 
@@ -51,7 +51,98 @@ function SwapEditor({ plan, onClose, onSaved }) {
   )
 }
 
-export default function FlexPayPanel({ isManager }) {
+/** Staff start a plan for a client who is in the salon, including in-salon clients without an account. */
+function NewPlan({ presetClient, onCreated }) {
+  const { products } = useStore()
+  const [client, setClient] = useState(presetClient || null)
+  const [q, setQ] = useState('')
+  const [results, setResults] = useState([])
+  const [qty, setQty] = useState({})
+  const [weeks, setWeeks] = useState(8)
+  const [agreed, setAgreed] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [open, setOpen] = useState(!!presetClient)
+  const keyRef = useRef(crypto.randomUUID ? crypto.randomUUID() : String(Date.now()))
+
+  useEffect(() => { if (presetClient) { setClient(presetClient); setOpen(true) } }, [presetClient])
+  useEffect(() => {
+    const term = q.trim().replace(/\//g, '')
+    if (term.length < 2 || client) { setResults([]); return }
+    const t = setTimeout(async () => {
+      try { setResults((await api('/admin/customers/' + encodeURIComponent(term))).customers) } catch { /* ignore */ }
+    }, 250)
+    return () => clearTimeout(t)
+  }, [q, client])
+
+  const chosen = products.filter(p => (qty[p.id] || 0) > 0)
+  const total = chosen.reduce((s, p) => s + p.price * qty[p.id], 0)
+
+  const create = async () => {
+    setBusy(true); setMsg('')
+    try {
+      await api('/admin/flexpay', {
+        method: 'POST',
+        body: { customerId: client.id, items: chosen.map(p => ({ productId: p.id, qty: qty[p.id] })), weeks, acceptTerms: agreed, idempotencyKey: keyRef.current },
+      })
+      keyRef.current = crypto.randomUUID ? crypto.randomUUID() : String(Date.now())
+      setClient(null); setQ(''); setQty({}); setAgreed(false); setOpen(false)
+      onCreated()
+    } catch (e) { setMsg(e.message) } finally { setBusy(false) }
+  }
+
+  if (!open) return <button onClick={() => setOpen(true)} className="btn-outline text-sm py-2 px-4 mt-4"><Plus size={15} /> Start a plan for a client</button>
+
+  return (
+    <div className="mt-4 rounded-xl p-4 space-y-4" style={box}>
+      <p className="text-white text-sm font-semibold">New FlexPay plan for a client</p>
+      {client ? (
+        <div className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 border border-brand-pink/40 bg-brand-pink/10">
+          <p className="text-white text-sm font-semibold truncate">{client.name} <span className="text-gray-300 font-normal">{client.phone || 'In-salon client'}</span></p>
+          <button onClick={() => setClient(null)} className="text-gray-300 hover:text-white" aria-label="Change client"><X size={16} /></button>
+        </div>
+      ) : (
+        <div className="relative">
+          <input className="input-field" placeholder="Find the client by name or phone…" value={q} onChange={e => setQ(e.target.value)} autoComplete="off" />
+          {results.length > 0 && (
+            <ul className="absolute z-20 left-0 right-0 mt-2 rounded-xl overflow-hidden border border-white/15" style={{ background: 'rgba(20,2,14,0.97)' }}>
+              {results.map(c => (
+                <li key={c.id}><button type="button" onClick={() => { setClient(c); setResults([]) }} className="w-full text-left px-4 py-3 hover:bg-white/10">
+                  <span className="text-white text-sm block">{c.name}</span><span className="text-gray-400 text-xs">{c.phone || 'In-salon client'}</span></button></li>
+              ))}
+            </ul>
+          )}
+          <p className="text-xs text-gray-400 font-poppins mt-2">Not found? Add them first in the Clients tab.</p>
+        </div>
+      )}
+      <ul className="space-y-2 max-h-48 overflow-y-auto">
+        {products.map(p => (
+          <li key={p.id} className="flex items-center justify-between gap-3 text-sm font-poppins">
+            <span className="min-w-0 truncate text-gray-100">{p.name} <span className="text-gray-400">{naira(p.price)}</span></span>
+            <input type="number" min="0" max="10" value={qty[p.id] || 0} aria-label={`Quantity of ${p.name}`}
+              onChange={e => setQty(v => ({ ...v, [p.id]: Math.max(0, Math.min(10, Number(e.target.value) || 0)) }))} className="input-field w-20 py-1.5 text-center" />
+          </li>
+        ))}
+      </ul>
+      <div>
+        <div className="flex justify-between text-sm font-poppins text-white mb-1"><span>{weeksLabel(weeks)}</span><span>{total > 0 ? `${naira(flexInstalment(total, weeks))} a week` : ''}</span></div>
+        <input type="range" min="2" max="22" value={weeks} onChange={e => setWeeks(Number(e.target.value))} className="w-full accent-pink-500" aria-label="Plan length in weeks" />
+        <p className="text-sm font-poppins text-white mt-1">Total: {naira(total)}</p>
+      </div>
+      <label className="flex gap-3 items-start text-sm font-poppins text-gray-200">
+        <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1" />
+        <span>The client has read and agreed to the FlexPay terms (including that stopping refunds 80% of what they have paid).</span>
+      </label>
+      {msg && <p className="text-red-400 text-sm" role="alert">{msg}</p>}
+      <div className="flex gap-2">
+        <button onClick={create} disabled={busy || !client || total <= 0 || !agreed} className="btn-primary flex-1 disabled:opacity-50">{busy ? 'Creating…' : 'Create plan'}</button>
+        <button onClick={() => setOpen(false)} className="btn-outline">Close</button>
+      </div>
+    </div>
+  )
+}
+
+export default function FlexPayPanel({ isManager, presetClient }) {
   const [plans, setPlans] = useState(null)
   const [msg, setMsg] = useState('')
   const [swapId, setSwapId] = useState('')
@@ -136,6 +227,7 @@ export default function FlexPayPanel({ isManager }) {
           Customers create plans from their cart. Record each instalment in the <b className="text-white">Payments</b> tab (choose &ldquo;FlexPay instalment&rdquo;). Hold the items until the plan shows fully paid.
         </p>
         {msg && <p className="text-sm font-poppins text-red-300 mt-3" role="alert">{msg}</p>}
+        <NewPlan presetClient={presetClient} onCreated={load} />
       </div>
       {plans === null ? <div className="spinner mx-auto my-4" aria-label="Loading" /> : (
         <>

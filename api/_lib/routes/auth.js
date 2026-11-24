@@ -2,7 +2,7 @@ import crypto from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { sql, logActivity } from '../db.js'
 import {
-  hashPassword, verifyPassword, issueSession, clearSession, currentUser, publicUser,
+  hashPassword, verifyPassword, issueSession, clearSession, currentUser, publicUser, renewSessionIfOld,
 } from '../auth.js'
 import { HttpError, send, body, clientIp, normalizePhone, normalizeEmail } from '../http.js'
 import { notifyUser } from '../notify.js'
@@ -99,9 +99,10 @@ export async function login(req, res) {
       ? await sql`select * from users where email = ${email}`
       : []
   const user = rows[0]
-  const ok = await verifyPassword(password, user ? user.password_hash : DUMMY_HASH)
+  const ok = await verifyPassword(password, user?.password_hash || DUMMY_HASH)
 
-  if (!user || !ok || !user.is_active) {
+  // In-salon client profiles have no password and can never log in
+  if (!user || !user.password_hash || user.is_walkin || !ok || !user.is_active) {
     await sql`insert into login_attempts (identifier, ip, success) values (${key}, ${ip}, false)`
     throw new HttpError(401, 'Incorrect phone/email or password')
   }
@@ -119,5 +120,6 @@ export async function logout(req, res) {
 
 export async function me(req, res) {
   const user = await currentUser(req)
+  if (user) await renewSessionIfOld(res, user)
   send(res, 200, { user: user ? publicUser(user) : null })
 }
