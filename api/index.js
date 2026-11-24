@@ -13,6 +13,7 @@ import * as flexpay from './_lib/routes/flexpay.js'
 import * as cart from './_lib/routes/cart.js'
 import * as orders from './_lib/routes/orders.js'
 import * as clients from './_lib/routes/clients.js'
+import * as team from './_lib/routes/team.js'
 
 const ROUTES = [
   // Accounts
@@ -51,6 +52,12 @@ const ROUTES = [
   ['POST',   '/admin/orders/:id/ready', orders.readyOrder],
   ['POST',   '/admin/orders/:id/complete', orders.completeOrder],
   ['POST',   '/admin/orders/:id/cancel', orders.cancelOrder],
+  ['GET',    '/admin/team', team.listTeam],
+  ['POST',   '/admin/team', team.createStaff],
+  ['PATCH',  '/admin/team/:id', team.updateStaff],
+  ['POST',   '/admin/team/:id/reset-password', team.resetStaffPassword],
+  ['POST',   '/admin/team/:id/active', team.setStaffActive],
+  ['POST',   '/me/password', team.changeMyPassword],
   ['GET',    '/admin/clients', clients.listClients],
   ['POST',   '/admin/clients', clients.createClient],
   ['GET',    '/admin/clients/:id', clients.clientDetail],

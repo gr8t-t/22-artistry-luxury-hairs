@@ -291,6 +291,7 @@ const STATEMENTS = [
   `create index if not exists idx_orders_status on orders (status, created_at desc)`,
   `alter table payments add column if not exists order_id uuid references orders(id)`,
   `create index if not exists idx_payments_order on payments (order_id) where order_id is not null`,
+  `alter table users add column if not exists must_change_password boolean not null default false`,
   `create or replace function order_paid(oid uuid) returns bigint language sql stable as
      $$ select coalesce(sum(amount_kobo), 0)::bigint from payments where order_id = oid and status = 'confirmed' $$`,
 ]

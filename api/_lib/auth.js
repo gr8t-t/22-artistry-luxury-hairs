@@ -49,6 +49,7 @@ export function publicUser(u) {
     email: u.email,
     referralCode: u.referral_code,
     createdAt: u.created_at,
+    mustChangePassword: !!u.must_change_password,
   }
 }
 

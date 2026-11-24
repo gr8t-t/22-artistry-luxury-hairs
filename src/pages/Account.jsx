@@ -9,6 +9,7 @@ import { PushControls, InstallControls } from '../components/NotificationBell'
 import WalletCard from '../components/WalletCard'
 import FlexPayCard from '../components/FlexPayCard'
 import OrdersCard from '../components/OrdersCard'
+import ChangePasswordForm from '../components/ChangePasswordForm'
 
 function Field({ label, children }) {
   return (
@@ -156,6 +157,8 @@ export function AuthForms({ embedded = false } = {}) {
 
 function Profile() {
   const { user, logout, isStaff } = useAuth()
+  const [pwOpen, setPwOpen] = useState(false)
+  const [pwDone, setPwDone] = useState(false)
   const [copied, setCopied] = useState(false)
   const [payments, setPayments] = useState(null)
   const [receipt, setReceipt] = useState(null)
@@ -294,6 +297,18 @@ function Profile() {
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      <div className="glass-card rounded-2xl p-6 mt-4">
+        <p className="text-white font-semibold text-sm font-poppins mb-1">Password</p>
+        {pwOpen ? (
+          <ChangePasswordForm onDone={() => { setPwOpen(false); setPwDone(true) }} />
+        ) : (
+          <>
+            <p className="body-copy text-xs mb-3">{pwDone ? 'Your password was changed. Your other devices were logged out.' : 'Change the password you use to log in.'}</p>
+            <button onClick={() => { setPwDone(false); setPwOpen(true) }} className="text-brand-pink text-xs font-poppins">Change password</button>
+          </>
         )}
       </div>
 

@@ -28,6 +28,10 @@ export function AuthProvider({ children }) {
     return d.user
   }, [])
 
+  const refresh = useCallback(async () => {
+    try { const d = await api('/auth/me'); setUser(d.user) } catch { /* keep what we have */ }
+  }, [])
+
   const logout = useCallback(async () => {
     try { await api('/auth/logout', { method: 'POST' }) } catch { /* ignore */ }
     setUser(null)
@@ -36,7 +40,7 @@ export function AuthProvider({ children }) {
   const isStaff = !!user && (user.role === 'staff' || user.role === 'manager')
 
   return (
-    <AuthContext.Provider value={{ user, loading, isStaff, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, isStaff, login, register, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   )

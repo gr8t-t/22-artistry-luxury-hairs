@@ -95,15 +95,6 @@ export default function Home() {
         <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-10 flex flex-col justify-center pt-28 pb-10 md:pt-32 md:pb-20 md:min-h-screen">
           <div className="max-w-[600px]">
 
-            {/* Top tag */}
-            <div
-              className="flex items-center gap-3 mb-10 opacity-0 translate-y-8"
-              style={{ animation: 'fadeUp .8s .1s cubic-bezier(.16,1,.3,1) forwards' }}
-            >
-              <div className="w-8 h-px bg-brand-pink" />
-              <span className="eyebrow">Premium Hair Studio — Nigeria</span>
-            </div>
-
             {/* Headline */}
             <h1
               className="display-xl opacity-0 translate-y-8"

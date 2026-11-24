@@ -8,12 +8,14 @@ import RefundsPanel from '../components/admin/RefundsPanel'
 import FlexPayPanel from '../components/admin/FlexPayPanel'
 import OrdersPanel from '../components/admin/OrdersPanel'
 import ClientsPanel from '../components/admin/ClientsPanel'
+import TeamPanel from '../components/admin/TeamPanel'
+import ChangePasswordForm from '../components/ChangePasswordForm'
 import {
   Lock, Package, Image, Calendar, Plus, Trash2, Edit3, Save, X,
   Eye, EyeOff, LogOut, CheckCircle, Clock, XCircle, Star, MessageSquare, Megaphone, Upload,
 } from 'lucide-react'
 
-const MANAGER_TABS = ['Payments', 'Orders', 'Clients', 'FlexPay', 'Rewards', 'Wallet', 'Bookings', 'Products', 'Gallery', 'Reviews', 'Announcements']
+const MANAGER_TABS = ['Payments', 'Orders', 'Clients', 'FlexPay', 'Rewards', 'Wallet', 'Team', 'Bookings', 'Products', 'Gallery', 'Reviews', 'Announcements']
 const STAFF_TABS = ['Payments', 'Orders', 'Clients', 'FlexPay', 'Rewards', 'Bookings']
 const CATEGORIES = ['Hair', 'Accessories', 'Beauty']
 
@@ -258,6 +260,19 @@ export default function Admin() {
     )
   }
 
+  // A new staff member (or one whose password was reset) must choose their own password before anything else
+  if (user?.mustChangePassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 pt-20">
+        <div className="w-full max-w-md glass-card rounded-2xl p-7">
+          <h1 className="font-playfair text-white text-2xl font-bold mb-2">Choose your own password</h1>
+          <p className="body-copy text-sm mb-5">You are using a temporary password. Enter it as your current password, then choose a new one that only you know.</p>
+          <ChangePasswordForm submitLabel="Save and continue" />
+        </div>
+      </div>
+    )
+  }
+
   // ── Admin dashboard ──
   return (
     <div className="pt-20 min-h-screen">
@@ -322,6 +337,9 @@ export default function Admin() {
 
         {/* ── FLEXPAY TAB ── */}
         {tab === 'FlexPay' && <FlexPayPanel isManager={isManager} presetClient={preset} />}
+
+        {/* ── TEAM TAB (manager) ── */}
+        {tab === 'Team' && isManager && <TeamPanel me={user} />}
 
         {/* ── WALLET REFUNDS TAB (manager) ── */}
         {tab === 'Wallet' && isManager && <RefundsPanel />}
