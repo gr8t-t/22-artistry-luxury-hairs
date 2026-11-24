@@ -21,7 +21,8 @@ const STATS = [
   { value: '3+',   label: 'Years of Excellence' },
 ]
 
-function useReveal(ref) {
+// `when` re-runs the observer if the section appears later (for example, products arriving from the server)
+function useReveal(ref, when) {
   useEffect(() => {
     if (!ref.current) return
     const io = new IntersectionObserver(entries => {
@@ -34,7 +35,8 @@ function useReveal(ref) {
     }, { threshold: 0.1 })
     ref.current.querySelectorAll('[data-reveal]').forEach(el => io.observe(el))
     return () => io.disconnect()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [when])
 }
 
 export default function Home() {
@@ -45,7 +47,7 @@ export default function Home() {
   const productsRef = useRef(null)
   useReveal(statsRef)
   useReveal(servicesRef)
-  useReveal(productsRef)
+  useReveal(productsRef, featured.length)
 
   return (
     <div className="flex flex-col">
