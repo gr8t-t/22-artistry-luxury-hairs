@@ -19,6 +19,7 @@ const ACTIVITY_TEXT = {
   visit: 'Visit points', redeem: 'Free hair treatment', adjust: 'Adjustment',
   referral_reward: 'Referral reward', referral_reversal: 'Referral reward reversed',
   wallet_spend: 'Paid from Hair Wallet', wallet_refund: 'Hair Wallet refund', adjustment: 'Adjustment',
+  topup: 'Hair Wallet top-up', topup_reversal: 'Top-up reversed', refund_hold: 'Refund requested', refund_release: 'Refund request released',
 }
 
 export default function RewardsPanel({ isManager }) {

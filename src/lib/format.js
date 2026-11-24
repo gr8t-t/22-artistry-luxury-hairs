@@ -1,6 +1,6 @@
 export const naira = (n) => {
   const v = Number(n) || 0
-  return '₦' + v.toLocaleString('en-NG', {
+  return (v < 0 ? '-' : '') + '₦' + Math.abs(v).toLocaleString('en-NG', {
     minimumFractionDigits: Number.isInteger(v) ? 0 : 2,
     maximumFractionDigits: 2,
   })

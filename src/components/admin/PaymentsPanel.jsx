@@ -4,7 +4,7 @@ import { api } from '../../lib/api'
 import { naira, dateTime, PURPOSE_LABEL, METHOD_LABEL } from '../../lib/format'
 import Receipt from '../Receipt'
 
-const PURPOSES = ['service', 'product', 'booking_deposit', 'other']
+const PURPOSES = ['service', 'product', 'booking_deposit', 'wallet_topup', 'other']
 const METHODS = [
   { id: 'cash', label: 'Cash', Icon: Banknote },
   { id: 'pos', label: 'POS (card)', Icon: CreditCard },
@@ -74,6 +74,8 @@ export default function PaymentsPanel({ isManager }) {
     const value = Number(amount)
     if (!amount || !Number.isFinite(value) || value <= 0) return setError('Enter the amount received.')
     if (mode === 'registered' && !customer) return setError('Search and select the customer, or switch to Walk-in.')
+    if (purpose === 'wallet_topup' && mode !== 'registered') return setError('A Hair Wallet top-up needs a registered customer.')
+    if (purpose === 'wallet_topup' && method === 'wallet') return setError('A top-up must be paid with cash, POS or transfer.')
     if (method === 'wallet' && mode !== 'registered') return setError('Hair Wallet can only be used for a registered customer.')
     if (mode === 'walkin' && !walkName.trim()) return setError('Enter the customer\'s name.')
 
@@ -200,7 +202,7 @@ export default function PaymentsPanel({ isManager }) {
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className={label}>Payment for</label>
-            <select className="input-field" value={purpose} onChange={e => setPurpose(e.target.value)}>
+            <select className="input-field" value={purpose} onChange={e => { setPurpose(e.target.value); if (e.target.value === 'wallet_topup' && method === 'wallet') setMethod('cash') }}>
               {PURPOSES.map(p => <option key={p} value={p}>{PURPOSE_LABEL[p]}</option>)}
             </select>
           </div>
@@ -219,7 +221,7 @@ export default function PaymentsPanel({ isManager }) {
         <div>
           <label className={label}>How was it paid?</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {METHODS.map(({ id, label: t, Icon }) => (
+            {METHODS.filter(m => !(purpose === 'wallet_topup' && m.id === 'wallet')).map(({ id, label: t, Icon }) => (
               <button type="button" key={id} onClick={() => setMethod(id)}
                 className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-poppins transition-all ${
                   method === id ? 'border-brand-pink bg-brand-pink/20 text-white' : 'border-white/15 text-gray-300 hover:text-white hover:border-white/30'}`}>

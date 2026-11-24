@@ -5,11 +5,12 @@ import { send, body, text, uuid, normalizePhone, HttpError } from '../http.js'
 import { nairaToKobo, koboToNaira, formatNaira, MAX_PAYMENT_KOBO } from '../money.js'
 import { notifyUser } from '../notify.js'
 import { applyRewardsForPayment, undoRewardsForPayment } from '../rewards.js'
+import { checkGoalReached, walletFigures } from './wallet.js'
 
-// Wallet top-ups and FlexPay instalments are added in later steps (they need balances to credit).
-const PURPOSES = ['service', 'product', 'booking_deposit', 'other']
+// FlexPay instalments are added in a later step.
+const PURPOSES = ['service', 'product', 'booking_deposit', 'wallet_topup', 'other']
 const METHODS = ['cash', 'pos', 'transfer', 'wallet']
-const PURPOSE_TEXT = { service: 'service', product: 'product purchase', booking_deposit: 'booking deposit', other: 'payment' }
+const PURPOSE_TEXT = { service: 'service', product: 'product purchase', booking_deposit: 'booking deposit', wallet_topup: 'Hair Wallet top-up', other: 'payment' }
 
 export const mapPayment = (p) => ({
   id: p.id,
@@ -89,8 +90,28 @@ export async function recordPayment(req, res) {
   }
 
   // The unique idempotency key means a double-tap or retry can never record the money twice.
+  if (b.purpose === 'wallet_topup') {
+    if (b.method === 'wallet') throw new HttpError(400, 'A top-up must be paid with cash, POS or transfer, not from the wallet itself')
+    if (!customer) throw new HttpError(400, 'Hair Wallet top-ups need a registered customer')
+  }
+
   let inserted
-  if (b.method === 'wallet') {
+  if (b.purpose === 'wallet_topup') {
+    // The receipt and the wallet credit are written together, or not at all.
+    const id = crypto.randomUUID()
+    const result = await sql.transaction([
+      sql`insert into payments (id, receipt_no, idempotency_key, customer_id, customer_name, customer_phone, purpose,
+                                description, amount_kobo, method, reference, booking_id, recorded_by)
+          values (${id}::uuid, 'RC-' || to_char(now(), 'YYMM') || '-' || lpad(nextval('receipt_seq')::text, 5, '0'),
+                  ${key}::text, ${customer.id}::uuid, ${name}::text, ${phone}::text, 'wallet_topup',
+                  ${description}::text, ${kobo}::bigint, ${b.method}::text, ${reference}::text, ${bookingId}::uuid, ${staff.id}::uuid)
+          on conflict (idempotency_key) do nothing returning id`,
+      sql`insert into wallet_ledger (user_id, amount_kobo, type, payment_id, note, created_by)
+          select ${customer.id}::uuid, ${kobo}::bigint, 'topup', ${id}::uuid, 'Top-up at the salon', ${staff.id}::uuid
+          where exists (select 1 from payments where id = ${id}::uuid)`,
+    ])
+    inserted = result[0]
+  } else if (b.method === 'wallet') {
     // Paying from the Hair Wallet: the balance check, the payment and the debit happen together, or not at all.
     if (!customer) throw new HttpError(400, 'Hair Wallet can only be used by a registered customer')
     const id = crypto.randomUUID()
@@ -135,8 +156,11 @@ export async function recordPayment(req, res) {
   if (customer?.id) {
     await notifyUser(customer.id, {
       type: 'payment', title: 'Payment received',
-      body: `${formatNaira(payment.amount)} ${b.method === 'wallet' ? 'paid from your Hair Wallet' : 'received'} (${PURPOSE_TEXT[b.purpose]}). Receipt ${payment.receiptNo}.`, url: '/account',
+      body: b.purpose === 'wallet_topup'
+        ? `${formatNaira(payment.amount)} was added to your Hair Wallet. New balance ${formatNaira((await walletFigures(customer.id)).balance / 100)}. Receipt ${payment.receiptNo}.`
+        : `${formatNaira(payment.amount)} ${b.method === 'wallet' ? 'paid from your Hair Wallet' : 'received'} (${PURPOSE_TEXT[b.purpose]}). Receipt ${payment.receiptNo}.`, url: '/account',
     })
+    if (b.purpose === 'wallet_topup') await checkGoalReached(customer.id)
   }
   // Loyalty points + referral reward (safe to repeat, never throws)
   const rewards = customer?.id ? await applyRewardsForPayment(inserted[0].id, staff.id) : null
@@ -161,9 +185,30 @@ export async function reversePayment(req, res) {
   const id = uuid(req.params.id)
   const reason = text(body(req).reason, 'Reason', { required: true, max: 300 })
   if (reason.length < 3) throw new HttpError(400, 'Please give a short reason')
-  const rows = await sql`update payments set status = 'reversed', reversed_by = ${manager.id},
-      reversed_at = now(), reverse_reason = ${reason}
-    where id = ${id} and status = 'confirmed' returning id`
+  const pre = (await sql`select purpose, customer_id from payments where id = ${id}`)[0]
+  let rows
+  if (pre?.purpose === 'wallet_topup' && pre.customer_id) {
+    // A top-up can only be reversed while the customer still has that money in their wallet.
+    const [, upd] = await sql.transaction([
+      sql`select pg_advisory_xact_lock(hashtext(${'wallet:' + pre.customer_id}))`,
+      sql`with u as (
+            update payments set status = 'reversed', reversed_by = ${manager.id}::uuid, reversed_at = now(), reverse_reason = ${reason}::text
+            where id = ${id}::uuid and status = 'confirmed'
+              and (select coalesce(sum(amount_kobo), 0) from wallet_ledger where user_id = ${pre.customer_id}::uuid) >= amount_kobo
+            returning id, customer_id, amount_kobo)
+          insert into wallet_ledger (user_id, amount_kobo, type, payment_id, note, created_by)
+          select customer_id, -amount_kobo, 'topup_reversal', id, 'Top-up was reversed', ${manager.id}::uuid from u returning payment_id as id`,
+    ])
+    rows = upd
+    if (!rows.length) {
+      const st = (await sql`select status from payments where id = ${id}`)[0]
+      if (st?.status === 'confirmed') throw new HttpError(409, 'The customer has already spent, or asked a refund for, part of this top-up, so it cannot be reversed.')
+    }
+  } else {
+    rows = await sql`update payments set status = 'reversed', reversed_by = ${manager.id},
+        reversed_at = now(), reverse_reason = ${reason}
+      where id = ${id} and status = 'confirmed' returning id`
+  }
   if (!rows.length) throw new HttpError(409, 'This payment was not found or is already reversed')
   await logActivity(manager.id, 'payment.reversed', 'payment', id, { reason })
   await undoRewardsForPayment(id)

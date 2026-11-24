@@ -8,6 +8,7 @@ import * as engage from './_lib/routes/engage.js'
 import * as payments from './_lib/routes/payments.js'
 import * as notifications from './_lib/routes/notifications.js'
 import * as rewards from './_lib/routes/rewards.js'
+import * as wallet from './_lib/routes/wallet.js'
 
 const ROUTES = [
   // Accounts
@@ -26,6 +27,14 @@ const ROUTES = [
   // Any logged-in user
   ['GET',    '/me/payments',   payments.myPayments],
   ['GET',    '/me/rewards',    rewards.myRewards],
+  ['GET',    '/me/wallet',     wallet.myWallet],
+  ['POST',   '/me/wallet/goal', wallet.saveGoal],
+  ['DELETE', '/me/wallet/goal', wallet.deleteGoal],
+  ['POST',   '/me/wallet/refund', wallet.requestRefund],
+  ['POST',   '/me/wallet/refund/:id/cancel', wallet.cancelRefund],
+  ['GET',    '/admin/wallet/refunds', wallet.listRefunds],
+  ['POST',   '/admin/wallet/refunds/:id/decide', wallet.decideRefund],
+  ['GET',    '/cron/wallet-reminders', wallet.walletReminders],
   ['GET',    '/me/notifications',        notifications.listMine],
   ['POST',   '/me/notifications/read',   notifications.markRead],
   ['POST',   '/me/push/subscribe',       notifications.subscribe],

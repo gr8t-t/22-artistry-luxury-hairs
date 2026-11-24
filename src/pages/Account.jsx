@@ -6,6 +6,7 @@ import { api } from '../lib/api'
 import { naira, dateTime, PURPOSE_LABEL } from '../lib/format'
 import Receipt from '../components/Receipt'
 import { PushControls, InstallControls } from '../components/NotificationBell'
+import WalletCard from '../components/WalletCard'
 
 function Field({ label, children }) {
   return (
@@ -227,7 +228,7 @@ function Profile() {
             <ul className="divide-y divide-white/10 mt-4 text-sm font-poppins">
               {rw.activity.slice(0, 5).map((a, i) => (
                 <li key={i} className="flex justify-between gap-3 py-2">
-                  <span className="text-gray-200 truncate">{{ visit: 'Visit points', redeem: 'Free hair treatment used', adjust: 'Adjustment', referral_reward: 'Referral reward', referral_reversal: 'Referral reward reversed', wallet_spend: 'Paid with Hair Wallet', wallet_refund: 'Hair Wallet refund', adjustment: 'Adjustment' }[a.type] || a.type}</span>
+                  <span className="text-gray-200 truncate">{{ visit: 'Visit points', redeem: 'Free hair treatment used', adjust: 'Adjustment', referral_reward: 'Referral reward', referral_reversal: 'Referral reward reversed', wallet_spend: 'Paid with Hair Wallet', wallet_refund: 'Hair Wallet refund', topup: 'Hair Wallet top-up', topup_reversal: 'Top-up reversed', refund_hold: 'Refund requested', refund_release: 'Refund request released', adjustment: 'Adjustment' }[a.type] || a.type}</span>
                   <span className={`shrink-0 font-semibold ${a.amount < 0 ? 'text-red-300' : 'text-green-300'}`}>{a.kind === 'points' ? `${a.amount > 0 ? '+' : ''}${a.amount} pts` : `${a.amount > 0 ? '+' : ''}${naira(a.amount)}`}</span>
                 </li>
               ))}
@@ -235,6 +236,8 @@ function Profile() {
           )}
         </div>
       )}
+
+      <WalletCard />
 
       <div className="glass-card rounded-2xl p-6 mt-4">
         <div className="flex items-center gap-2 mb-1">

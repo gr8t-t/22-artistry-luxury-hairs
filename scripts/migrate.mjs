@@ -191,6 +191,36 @@ const STATEMENTS = [
   )`,
   `create index if not exists idx_wallet_user on wallet_ledger (user_id, created_at desc)`,
   `create unique index if not exists uq_wallet_payment_type on wallet_ledger (payment_id, type) where payment_id is not null`,
+
+  // ── Step 5: Hair Wallet top-ups, savings goal, weekly reminder, refund requests ──
+  `alter table wallet_ledger drop constraint if exists wallet_ledger_type_check`,
+  `alter table wallet_ledger add constraint wallet_ledger_type_check check (type in
+    ('referral_reward','referral_reversal','wallet_spend','wallet_refund','adjustment',
+     'topup','topup_reversal','refund_hold','refund_release'))`,
+  `create table if not exists wallet_goals (
+    user_id          uuid primary key references users(id),
+    title            text not null,
+    target_kobo      bigint not null check (target_kobo > 0),
+    reminders_on     boolean not null default true,
+    remind_weekday   smallint not null default 1 check (remind_weekday between 1 and 7),
+    last_reminded_on date,
+    reached_notified boolean not null default false,
+    updated_at       timestamptz not null default now()
+  )`,
+  `create table if not exists wallet_refund_requests (
+    id              uuid primary key default gen_random_uuid(),
+    user_id         uuid not null references users(id),
+    amount_kobo     bigint not null check (amount_kobo > 0),
+    reason          text not null default '',
+    status          text not null default 'pending' check (status in ('pending','approved','rejected','cancelled')),
+    idempotency_key text not null unique,
+    decided_by      uuid references users(id),
+    decided_at      timestamptz,
+    decision_note   text not null default '',
+    created_at      timestamptz not null default now()
+  )`,
+  `create unique index if not exists uq_one_pending_refund on wallet_refund_requests (user_id) where status = 'pending'`,
+  `create index if not exists idx_refund_status on wallet_refund_requests (status, created_at desc)`,
 ]
 
 for (const stmt of STATEMENTS) {
